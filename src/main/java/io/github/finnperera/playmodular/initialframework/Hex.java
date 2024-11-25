@@ -9,7 +9,7 @@ import java.util.Objects;
  * <a href="https://www.redblobgames.com/grids/hexagons/implementation.html">...</a>
  * Which outlines the majority of functions a hexagonal engine requires.
  */
-public class Hex {
+public class Hex implements Position{
     private static final Hex[] hexDirections =
             new Hex[]{new Hex(1, 0, -1), new Hex(1, -1, 0), new Hex(0, -1, 1),
                     new Hex(-1, 0, 1), new Hex(-1, 1, 0), new Hex(0, 1, -1)};
@@ -74,12 +74,20 @@ public class Hex {
         return hexAdd(hex, hexDirection(direction));
     }
 
-    public static List<Hex> getNeighbours(Hex hex) {
+    public List<Hex> getNeighbours() {
         List<Hex> neighbours = new ArrayList<>();
         for (int i = 0; i < hexDirections.length; i++) {
-            neighbours.add(hexNeighbour(hex, i));
+            neighbours.add(hexNeighbour(this, i));
         }
         return neighbours;
     }
 
+    @Override
+    public boolean isAdjacent(Position other) {
+        if (!(other instanceof Hex)) return false;
+        for (Hex hexDirection : hexDirections) {
+            if (hexDirection.equals(other)) return true;
+        }
+        return false;
+    }
 }
