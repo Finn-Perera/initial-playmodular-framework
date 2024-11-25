@@ -34,8 +34,64 @@ public class HiveRuleEngine {
         return moves;
     }
 
-    public Move generatePlacementMoves() {
-        return null;
+    public List<Hex> generatePlacementPositions(HiveBoardState boardState, HivePlayer player) {
+        assert player.equals(boardState.getPlayer1()) || player.equals(boardState.getPlayer2());
+        HashMap<Hex, HiveTile> board = boardState.getBoard();
+        HiveColour colour = player.getColour();
+
+        // check if beginning board
+        if (board.isEmpty()) {
+            return List.of(new Hex(0, 0, 0));
+        } else if (board.size() < 2) {
+            return Hex.getNeighbours(new Hex(0, 0, 0)); // works since equals checks for q r s
+        }
+
+        List<Hex> validPositions = new ArrayList<>();
+        HashSet<Hex> visited = new HashSet<>();
+        Queue<Hex> queue = new LinkedList<>();
+        Hex startTile = board.entrySet().iterator().next().getKey();
+        assert startTile != null; // something went wrong setting up the board
+        queue.offer(startTile);
+
+        while (!queue.isEmpty()) {
+            Hex current = queue.poll();
+            visited.add(current);
+
+            // ignore hexes of opposite colour, still visit neighbouring tiles
+            if (board.get(current).getColour() != colour) {
+                for (Hex neighbour : Hex.getNeighbours(current)) {
+                    if (!visited.contains(neighbour) && boardState.hasTileAtHex(neighbour)) {
+                        queue.offer(neighbour);
+                    }
+                }
+            } else {
+                assert colour == board.get(current).getColour();
+
+                for (Hex neighbour : Hex.getNeighbours(current)) {
+                    if (visited.contains(neighbour)) continue;
+
+                    if (boardState.hasTileAtHex(neighbour)) {
+                        queue.offer(neighbour);
+                    } else {
+                       if (isValidPlacePosition(board, colour, neighbour)) validPositions.add(neighbour);
+                    }
+                }
+            }
+        }
+        return validPositions;
+    }
+
+    private boolean isValidPlacePosition(HashMap<Hex, HiveTile> board, HiveColour colour, Hex hex) {
+        assert board.containsKey(hex); // should be empty hex
+        for (Hex neighbour : Hex.getNeighbours(hex)) {
+            if (!board.containsKey(neighbour)) continue;
+
+            if (board.get(neighbour).getColour() != colour) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public boolean isFreeToMove(HiveBoardState boardState, HiveTile tileToMove, Hex nextPosition) {
@@ -44,9 +100,9 @@ public class HiveRuleEngine {
         Hex direction = Hex.hexSubtract(tileToMove.getHex(), nextPosition);
         int directionIndex = Hex.hexDirectionAsIndex(direction);
 
-        boolean leftDirectionClear = boardState.getBoard().containsKey(
+        boolean leftDirectionClear = boardState.hasTileAtHex(
                 Hex.hexNeighbour(tileToMove.getHex(), (directionIndex + 1) % 6));
-        boolean rightDirectionClear = boardState.getBoard().containsKey(
+        boolean rightDirectionClear = boardState.hasTileAtHex(
                 Hex.hexNeighbour(tileToMove.getHex(), (directionIndex - 1) % 6));
 
         return leftDirectionClear || rightDirectionClear;
@@ -57,9 +113,9 @@ public class HiveRuleEngine {
         // Move must belong to board
         assert boardState.getBoard().get(hiveTile.getHex()).equals(hiveTile);
 
-        boolean leftDirectionClear = boardState.getBoard().containsKey(
+        boolean leftDirectionClear = boardState.hasTileAtHex(
                 Hex.hexNeighbour(hiveTile.getHex(), (directionIndex + 1) % 6));
-        boolean rightDirectionClear = boardState.getBoard().containsKey(
+        boolean rightDirectionClear = boardState.hasTileAtHex(
                 Hex.hexNeighbour(hiveTile.getHex(), (directionIndex - 1) % 6));
 
         return leftDirectionClear || rightDirectionClear;

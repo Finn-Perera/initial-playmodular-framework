@@ -5,10 +5,12 @@ public class HiveTile implements Piece {
     private HiveTileType tileType;
 
     private Hex hex;
+    private HiveColour colour;
 
-    public HiveTile(HiveTileType tileType, Hex hex) {
+    public HiveTile(HiveTileType tileType, Hex hex, HiveColour colour) {
         this.tileType = tileType;
         this.hex = hex;
+        this.colour = colour;
     }
 
     public HiveTileType getTileType() {
@@ -17,5 +19,9 @@ public class HiveTile implements Piece {
 
     public Hex getHex() {
         return hex;
+    }
+
+    public HiveColour getColour() {
+        return colour;
     }
 }
