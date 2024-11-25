@@ -5,18 +5,28 @@ import java.util.HashMap;
 public class HiveBoardState implements BoardState {
 
     private HashMap<Hex, HiveTile> board = new HashMap<>();
-    private HashMap<HiveTileType, Integer> player1Tiles = new HashMap<>();
-    private HashMap<HiveTileType, Integer> player2Tiles = new HashMap<>();
 
-    public void fillHand(HashMap<HiveTileType, Integer> playerHand) {
-        playerHand.put(HiveTileType.QUEEN_BEE, 1);
-        playerHand.put(HiveTileType.GRASSHOPPER, 2);
-        playerHand.put(HiveTileType.BEETLE, 2);
-        playerHand.put(HiveTileType.SOLDIER_ANT, 3);
-        playerHand.put(HiveTileType.SPIDER, 3);
+    private HivePlayer player1;
+    private HivePlayer player2;
+
+    public HiveBoardState(HivePlayer player1, HivePlayer player2) {
+        this.player1 = player1;
+        this.player2 = player2;
     }
 
     public HashMap<Hex, HiveTile> getBoard() {
         return board;
+    }
+
+    public boolean hasTileAtHex(Hex hex) {
+        return board.containsKey(hex);
+    }
+
+    public HivePlayer getPlayer1() {
+        return player1;
+    }
+
+    public HivePlayer getPlayer2() {
+        return player2;
     }
 }
