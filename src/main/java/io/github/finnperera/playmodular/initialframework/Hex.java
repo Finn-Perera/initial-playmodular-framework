@@ -90,4 +90,16 @@ public class Hex implements Position{
         }
         return false;
     }
+
+    public int getQ() {
+        return q;
+    }
+
+    public int getR() {
+        return r;
+    }
+
+    public int getS() {
+        return s;
+    }
 }

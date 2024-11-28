@@ -1,7 +1,6 @@
 package io.github.finnperera.playmodular.initialframework;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class HivePlayer implements Player {
 
@@ -33,7 +32,7 @@ public class HivePlayer implements Player {
         tiles.put(type, tiles.get(type) - 1);
     }
 
-    public int getRemainingTiles(HiveTileType type) {
+    public int getTypeRemainingTiles(HiveTileType type) {
         return tiles.getOrDefault(type, 0);
     }
 

@@ -5,15 +5,21 @@ import java.util.*;
 public class HiveRuleEngine {
     public static final int NUM_NEIGHBOURS = 6;
 
-    public List<HiveMove> generatePieceMoves(HiveBoardState<Hex, HiveTile> boardState, HiveTile hiveTile) {
-        List<HiveMove> moves = new ArrayList<HiveMove>();
+    public HiveRuleEngine() {}
+
+    public List<HiveMove> generatePieceMoves(HiveBoardState boardState, HiveTile hiveTile) {
+        List<HiveMove> moves = new ArrayList<>();
         switch (hiveTile.getTileType()) {
             case QUEEN_BEE -> moves = queenMoves(boardState, hiveTile);
+            case BEETLE -> moves = queenMoves(boardState, hiveTile);
+            case SPIDER -> moves = queenMoves(boardState, hiveTile);
+            case SOLDIER_ANT -> moves = queenMoves(boardState, hiveTile);
+            case GRASSHOPPER -> moves = queenMoves(boardState, hiveTile);
         }
         return moves;
     }
 
-    private List<HiveMove> queenMoves(HiveBoardState<Hex, HiveTile> boardState, HiveTile hiveTile) {
+    private List<HiveMove> queenMoves(HiveBoardState boardState, HiveTile hiveTile) {
         // Tile must belong to board
         assert boardState.getPieceAt(hiveTile.getHex()).equals(hiveTile);
 
@@ -23,19 +29,20 @@ public class HiveRuleEngine {
             if (boardState.hasTileAtHex(neighbouringTile)) continue;
 
             // free to move
-            if (!isFreeToMove(boardState, hiveTile, neighbouringTile)) continue;
+            //if (!isFreeToMove(boardState, hiveTile, neighbouringTile)) continue;
 
             // remains one hive
             if (!isOneHiveWhileMoving(boardState, hiveTile)) continue;
 
             // add move to list
-            moves.add(new HiveMove(hiveTile, neighbouringTile));
+            moves.add(new HiveMove(hiveTile, neighbouringTile, false));
         }
         return moves;
     }
 
-    public List<Hex> generatePlacementPositions(HiveBoardState<Hex, HiveTile> boardState, HivePlayer player) {
-        assert player.equals(boardState.getPlayer1()) || player.equals(boardState.getPlayer2());
+    public List<Hex> generatePlacementPositions(HiveBoardState boardState, HivePlayer player) {
+        // not sure how to check this anymore VV
+        //assert player.equals(boardState.getPlayer1()) || player.equals(boardState.getPlayer2());
         HiveColour colour = player.getColour();
 
         // check if beginning board
@@ -80,7 +87,7 @@ public class HiveRuleEngine {
         return validPositions;
     }
 
-    private boolean isValidPlacePosition(HiveBoardState<Hex, HiveTile> boardState, HiveColour colour, Hex hex) {
+    private boolean isValidPlacePosition(HiveBoardState boardState, HiveColour colour, Hex hex) {
         assert !boardState.hasPieceAt(hex); // should be empty hex
         for (Hex neighbour : hex.getNeighbours()) {
             if (!boardState.hasPieceAt(neighbour)) continue;
@@ -93,9 +100,10 @@ public class HiveRuleEngine {
         return true;
     }
 
-    public boolean isFreeToMove(HiveBoardState<Hex, HiveTile> boardState, HiveTile tileToMove, Hex nextPosition) {
+    public boolean isFreeToMove(HiveBoardState boardState, HiveTile tileToMove, Hex nextPosition) {
         // Move must belong to board
         assert boardState.getPieceAt(tileToMove.getHex()).equals(tileToMove);
+        if (Hex.hexDistance(tileToMove.getHex(), nextPosition) > 1) return true;
         Hex direction = Hex.hexSubtract(tileToMove.getHex(), nextPosition);
         int directionIndex = Hex.hexDirectionAsIndex(direction);
 
@@ -108,7 +116,7 @@ public class HiveRuleEngine {
     }
 
     // alternative, might be better if using direction index instead of full move?
-    public boolean isFreeToMove(HiveBoardState<Hex, HiveTile> boardState, HiveTile hiveTile, int directionIndex) {
+    public boolean isFreeToMove(HiveBoardState boardState, HiveTile hiveTile, int directionIndex) {
         // Move must belong to board
         assert boardState.getPieceAt(hiveTile.getHex()).equals(hiveTile);
 
@@ -121,7 +129,7 @@ public class HiveRuleEngine {
     }
 
     // BFS and check if all states visited, allows for skipping a tile (for oneHiveMoving)
-    public boolean isConnected(HiveBoardState<Hex, HiveTile> boardState, Hex startingTile, Hex tileToSkip) {
+    public boolean isConnected(HiveBoardState boardState, Hex startingTile, Hex tileToSkip) {
         if (startingTile == null) return true;
 
         HashSet<Hex> visited = new HashSet<>();
@@ -145,12 +153,12 @@ public class HiveRuleEngine {
         return visited.containsAll(boardState.getAllPositions());
     }
 
-    public boolean isOneHive(HiveBoardState<Hex, HiveTile> boardState) {
+    public boolean isOneHive(HiveBoardState boardState) {
         Hex tile = boardState.isBoardEmpty() ? null : boardState.getRandomPiece().getHex();
         return isConnected(boardState, tile, null);
     }
 
-    public boolean isOneHiveWhileMoving(HiveBoardState<Hex, HiveTile> boardState, HiveTile hiveTile) {
+    public boolean isOneHiveWhileMoving(HiveBoardState boardState, HiveTile hiveTile) {
         Hex tile = boardState.isBoardEmpty() ? null : boardState.getRandomPiece().getHex();
         return isConnected(boardState, tile, hiveTile.getHex());
     }
