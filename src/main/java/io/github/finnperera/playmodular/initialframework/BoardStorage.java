@@ -7,6 +7,7 @@ public interface BoardStorage<P, T> { // P : Position Type, T : Tile/Piece Type
     void placePieceAt(P position, T newPiece);
     void removePieceAt(P position);
     List<P> getAllPositions();
+    List<T> getAllPieces();
     boolean hasPieceAt(P position);
     boolean isEmpty();
     int size();
