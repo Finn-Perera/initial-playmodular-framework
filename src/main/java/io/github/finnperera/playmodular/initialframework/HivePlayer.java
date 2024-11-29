@@ -23,7 +23,7 @@ public class HivePlayer implements Player {
         tiles.put(HiveTileType.QUEEN_BEE, 1);
         tiles.put(HiveTileType.GRASSHOPPER, 2);
         tiles.put(HiveTileType.BEETLE, 2);
-        tiles.put(HiveTileType.SOLDIER_ANT, 3);
+        tiles.put(HiveTileType.ANT, 3);
         tiles.put(HiveTileType.SPIDER, 3);
     }
 

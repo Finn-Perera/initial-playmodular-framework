@@ -130,4 +130,8 @@ public class HiveGame implements Game<Hex, HiveTile> {
     public List<HivePlayer> getPlayers() {
         return List.of(player1, player2);
     }
+
+    public HiveRuleEngine getRuleEngine() {
+        return ruleEngine;
+    }
 }

@@ -32,4 +32,13 @@ public class HiveTile implements Piece {
         HiveTile hiveTile = (HiveTile) o;
         return tileType == hiveTile.tileType && Objects.equals(hex, hiveTile.hex) && colour == hiveTile.colour;
     }
+
+    @Override
+    public String toString() {
+        return "HiveTile{" +
+                "tileType=" + tileType +
+                ", hex=" + hex +
+                ", colour=" + colour +
+                '}';
+    }
 }

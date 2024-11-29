@@ -102,4 +102,13 @@ public class Hex implements Position{
     public int getS() {
         return s;
     }
+
+    @Override
+    public String toString() {
+        return "Hex{" +
+                "q=" + q +
+                ", r=" + r +
+                ", s=" + s +
+                '}';
+    }
 }

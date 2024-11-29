@@ -13,7 +13,7 @@ public class HiveRuleEngine {
             case QUEEN_BEE -> moves = queenMoves(boardState, hiveTile);
             case BEETLE -> moves = queenMoves(boardState, hiveTile);
             case SPIDER -> moves = queenMoves(boardState, hiveTile);
-            case SOLDIER_ANT -> moves = queenMoves(boardState, hiveTile);
+            case ANT -> moves = queenMoves(boardState, hiveTile);
             case GRASSHOPPER -> moves = queenMoves(boardState, hiveTile);
         }
         return moves;
@@ -32,7 +32,18 @@ public class HiveRuleEngine {
             //if (!isFreeToMove(boardState, hiveTile, neighbouringTile)) continue;
 
             // remains one hive
+            // still might not work
             if (!isOneHiveWhileMoving(boardState, hiveTile)) continue;
+            boolean hasNeighbours = false;
+            for (Hex nextNeighbouringTile : neighbouringTile.getNeighbours()) {
+                if (boardState.hasTileAtHex(nextNeighbouringTile) && boardState.getPieceAt(nextNeighbouringTile).equals(hiveTile)) {continue;}
+                if (boardState.hasPieceAt(nextNeighbouringTile)) {
+                    hasNeighbours = true;
+                    // BAD PRACTICE
+                    break;
+                }
+            }
+            if (!hasNeighbours) {continue;}
 
             // add move to list
             moves.add(new HiveMove(hiveTile, neighbouringTile, false));

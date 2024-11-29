@@ -23,4 +23,13 @@ public class HiveMove extends Move {
     public boolean isPlacementMove() {
         return placementMove;
     }
+
+    @Override
+    public String toString() {
+        return "HiveMove{" +
+                "placementMove=" + placementMove +
+                ", pieceToMove=" + pieceToMove +
+                ", nextPosition=" + nextPosition +
+                '}';
+    }
 }
