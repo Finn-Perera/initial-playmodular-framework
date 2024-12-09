@@ -1,8 +1,10 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.text.Text;
 import javafx.scene.layout.HBox;
@@ -37,7 +39,7 @@ public class HexMapVisualiser {
         int minR = storage.getAllPositions().stream().mapToInt(Hex::getR).min().orElse(0);
         int maxR = storage.getAllPositions().stream().mapToInt(Hex::getR).max().orElse(0);
 
-        double hexSize = 40; // Size of the hexagon
+        double hexSize = 60; // Size of the hexagon
         double hexWidth = Math.sqrt(3) * hexSize; // Width of a hexagon
         double hexHeight = 2 * hexSize; // Height of a hexagon
         double offsetX = 50; // Offset for x positioning
@@ -51,21 +53,25 @@ public class HexMapVisualiser {
                 double x = offsetX + (q + r / 2.0) * hexWidth;
                 double y = offsetY + r * (hexHeight * 0.75); // 0.75 accounts for staggered rows
 
-                Polygon hexagon = createHexagon(x, y, hexSize);
-                hexagon.setStroke(Color.BLACK);
-                hexagon.setOpacity(0.9);
+                Color circleColor = Color.LIGHTGRAY;  // Default color for the central circle
+
                 if (tile != null) {
-                    hexagon.setStrokeWidth(3);
+                    circleColor = switch (tile.getTileType()) {
+                        case QUEEN_BEE -> Color.YELLOW;
+                        case GRASSHOPPER -> Color.GREEN;
+                        case ANT -> Color.BLUE;
+                        case BEETLE -> Color.PURPLE;
+                        case SPIDER -> Color.BROWN;
+                    };
+                }
+                Group hexWithCircle = createHexagon(x, y, hexSize, circleColor);
+                Polygon hexagon = (Polygon) hexWithCircle.getChildren().getFirst();
+                Circle circle = (Circle) hexWithCircle.getChildren().getLast();
+
+                hexagon.setStroke(Color.DARKGRAY);
+                if (tile != null) {
                     hexagon.setFill(Color.valueOf(tile.getColour().toString()));
-                    switch (tile.getTileType()) {
-                        case QUEEN_BEE -> hexagon.setStroke(Color.YELLOW);
-                        case GRASSHOPPER -> hexagon.setStroke(Color.GREEN);
-                        case ANT -> hexagon.setStroke(Color.BLUE);
-                        case BEETLE -> hexagon.setStroke(Color.PURPLE);
-                        case SPIDER -> hexagon.setStroke(Color.BROWN);
-                    }
                     Text tileLabel = new Text(x - 10, y + 5, tile.getTileType().toString().substring(0, 1));
-                    tileLabel.setCaretBias(true);
                     tileLabel.autosize();
                     if ((tile.getColour() == HiveColour.BLACK)) {
                         tileLabel.setFill(Color.WHITE);
@@ -75,7 +81,7 @@ public class HexMapVisualiser {
                     hexagon.setFill(Color.LIGHTGRAY);
                 }
 
-                root.getChildren().add(hexagon);
+                root.getChildren().add(hexWithCircle);
             }
         }
         // Display player hands
@@ -117,6 +123,13 @@ public class HexMapVisualiser {
 
         // Add the buttons to the root pane
         root.getChildren().add(buttonBox);
+    }
+
+    private Group createHexagon(double x, double y, double size, Color circleColour) {
+        Polygon hex = createHexagon(x, y, size);
+        Circle centralCircle = new Circle(x, y, size / 3);
+        centralCircle.setFill(circleColour);
+        return new Group(hex, centralCircle);
     }
 
     private Polygon createHexagon(double x, double y, double size) {

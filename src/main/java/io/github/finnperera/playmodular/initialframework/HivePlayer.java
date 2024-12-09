@@ -36,6 +36,10 @@ public class HivePlayer implements Player {
         return tiles.getOrDefault(type, 0);
     }
 
+    public void setHand(HashMap<HiveTileType, Integer> tiles) {
+        this.tiles = tiles;
+    }
+
     public HiveColour getColour() {
         return colour;
     }
