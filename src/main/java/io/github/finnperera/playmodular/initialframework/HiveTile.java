@@ -41,4 +41,9 @@ public class HiveTile implements Piece {
                 ", colour=" + colour +
                 '}';
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tileType, hex, colour);
+    }
 }

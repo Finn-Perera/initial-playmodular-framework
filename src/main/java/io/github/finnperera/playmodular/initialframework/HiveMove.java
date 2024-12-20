@@ -1,5 +1,7 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import java.util.Objects;
+
 public class HiveMove extends Move {
 
     private boolean placementMove;
@@ -31,5 +33,19 @@ public class HiveMove extends Move {
                 ", pieceToMove=" + pieceToMove +
                 ", nextPosition=" + nextPosition +
                 '}';
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(placementMove, getPieceToMove(), getNextPosition());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        HiveMove hiveMove = (HiveMove) o;
+        return placementMove == hiveMove.placementMove &&
+                Objects.equals(pieceToMove, hiveMove.pieceToMove) &&
+                Objects.equals(nextPosition, hiveMove.nextPosition);
     }
 }
