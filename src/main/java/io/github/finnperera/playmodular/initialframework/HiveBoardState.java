@@ -3,15 +3,16 @@ package io.github.finnperera.playmodular.initialframework;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Stack;
 
 public class HiveBoardState implements BoardState<Hex, HiveTile> {
-    private MapBasedStorage<Hex, HiveTile> board;
+    private MapBasedStorage<Hex, Stack<HiveTile>> board;
 
     public HiveBoardState() {
         this.board = new MapBasedStorage<>();
     }
 
-    public HiveBoardState(MapBasedStorage<Hex, HiveTile> board) {
+    public HiveBoardState(MapBasedStorage<Hex, Stack<HiveTile>> board) {
         this.board = new MapBasedStorage<>(board);
     }
 
@@ -25,19 +26,29 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
 
     @Override
     public HiveTile getPieceAt(Hex position) {
-        return board.getPieceAt(position);
+        return board.getPieceAt(position).peek();
     }
 
     // Should be immutable
     @Override
     public void placePiece(Hex position, HiveTile piece) {
-        board.placePieceAt(position, piece);
+        if (board.hasPieceAt(position)) {
+            board.getPieceAt(position).push(piece);
+        } else {
+            Stack<HiveTile> stack = new Stack<>();
+            stack.push(piece);
+            board.placePieceAt(position, stack);
+        }
     }
 
     // Should be immutable
     @Override
     public void removePieceAt(Hex position) {
-        board.removePieceAt(position);
+        assert !board.getPieceAt(position).isEmpty();
+        board.getPieceAt(position).pop();
+        if (board.getPieceAt(position).isEmpty()) {
+            board.removePieceAt(position);
+        }
     }
 
     @Override
@@ -65,7 +76,7 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
         List<Hex> positions = getAllPositions();
         if (positions.isEmpty()) {return null;}
         Random rand = new Random();
-        return board.getPieceAt(positions.get(rand.nextInt(positions.size())));
+        return board.getPieceAt(positions.get(rand.nextInt(positions.size()))).peek();
     }
 
     // could be more efficient?
@@ -83,14 +94,16 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
 
     public List<HiveTile> getQueens() {
         List<HiveTile> queens = new ArrayList<>();
-        for (HiveTile piece : board.getAllPieces()) {
-            if (piece.getTileType() == HiveTileType.QUEEN_BEE) queens.add(piece);
+        for (Stack<HiveTile> stack : board.getAllPieces()) {
+            for (HiveTile piece : stack) {
+                if (piece.getTileType() == HiveTileType.QUEEN_BEE) queens.add(piece);
+            }
         }
         return queens;
     }
 
     // REMOVE AFTER TESTING
-    public MapBasedStorage<Hex, HiveTile> getBoard() {
+    public MapBasedStorage<Hex, Stack<HiveTile>> getBoard() {
         return board;
     }
 }

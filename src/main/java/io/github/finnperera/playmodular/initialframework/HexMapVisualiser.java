@@ -11,6 +11,7 @@ import javafx.scene.layout.HBox;
 
 import java.util.Map;
 import java.util.List;
+import java.util.Stack;
 
 
 public class HexMapVisualiser {
@@ -32,8 +33,7 @@ public class HexMapVisualiser {
     }
 
     public void drawHexMap(HiveGame hiveGame) {
-        MapBasedStorage<Hex, HiveTile> storage = hiveGame.getBoardState().getBoard();
-
+        MapBasedStorage<Hex, Stack<HiveTile>> storage = hiveGame.getBoardState().getBoard();
         int minQ = storage.getAllPositions().stream().mapToInt(Hex::getQ).min().orElse(0);
         int maxQ = storage.getAllPositions().stream().mapToInt(Hex::getQ).max().orElse(0);
         int minR = storage.getAllPositions().stream().mapToInt(Hex::getR).min().orElse(0);
@@ -48,7 +48,7 @@ public class HexMapVisualiser {
         for (int r = minR; r <= maxR; r++) {
             for (int q = minQ; q <= maxQ; q++) {
                 Hex key = new Hex(q, r, -q - r);
-                HiveTile tile = storage.getPieceAt(key);
+                HiveTile tile = storage.getPieceAt(key).peek();
 
                 double x = offsetX + (q + r / 2.0) * hexWidth;
                 double y = offsetY + r * (hexHeight * 0.75); // 0.75 accounts for staggered rows
@@ -144,7 +144,7 @@ public class HexMapVisualiser {
     }
 
     public static void printHexMap(HiveGame game) {
-        MapBasedStorage<Hex, HiveTile> storage = game.getBoardState().getBoard();
+        MapBasedStorage<Hex, Stack<HiveTile>> storage = game.getBoardState().getBoard();
 
         int minQ = storage.getAllPositions().stream().mapToInt(Hex::getQ).min().orElse(0);
         int maxQ = storage.getAllPositions().stream().mapToInt(Hex::getQ).max().orElse(0);
@@ -172,7 +172,7 @@ public class HexMapVisualiser {
             for (int q = minQ; q <= maxQ; q++) {
                 // Correctly calculate the hex key
                 Hex key = new Hex(q, r, -q - r);
-                HiveTile tile = storage.getPieceAt(key);
+                HiveTile tile = storage.getPieceAt(key).peek();
 
                 if (tile != null) {
                     // Compact representation with color and first letter of tile type

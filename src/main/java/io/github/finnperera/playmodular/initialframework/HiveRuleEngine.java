@@ -12,7 +12,7 @@ public class HiveRuleEngine {
         List<HiveMove> moves = new ArrayList<>();
         switch (hiveTile.getTileType()) {
             case QUEEN_BEE -> moves = queenMoves(boardState, hiveTile);
-            case BEETLE -> moves = queenMoves(boardState, hiveTile);
+            case BEETLE -> moves = beetleMoves(boardState, hiveTile);
             case SPIDER -> moves = spiderMoves(boardState, hiveTile);
             case ANT -> moves = soldierAntMoves(boardState, hiveTile);
             case GRASSHOPPER -> moves = grassHopperMoves(boardState, hiveTile);
@@ -51,6 +51,48 @@ public class HiveRuleEngine {
             moves.add(new HiveMove(hiveTile, neighbouringTile, false));
         }
         return moves;
+    }
+
+    private List<HiveMove> beetleMoves(HiveBoardState boardState, HiveTile hiveTile) {
+        List<HiveMove> moves = new ArrayList<>();
+        for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
+            if (!isEmptyConnectedPosition(boardState, neighbour, new HashSet<>(Set.of(hiveTile.getHex()))) ||
+                    boardState.hasPieceAt(neighbour)) {
+                moves.add(new HiveMove(hiveTile, neighbour, false));
+            }
+        }
+        return moves;
+    }
+
+    private List<HiveMove> spiderMoves(HiveBoardState boardState, HiveTile hiveTile) {
+        List<HiveMove> moves = new ArrayList<>();
+
+        for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
+            if (boardState.hasTileAtHex(neighbour)) continue;
+            HashSet<Hex> visited = new HashSet<>();
+            visited.add(hiveTile.getHex());
+
+            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
+
+
+            visited.add(neighbour);
+            spiderMoveToDepth(boardState, neighbour, hiveTile, 1, visited, moves);
+        }
+
+        return moves;
+    }
+
+    private void spiderMoveToDepth(HiveBoardState boardState, Hex tile, HiveTile originalTile, int depth, HashSet<Hex> visited, List<HiveMove> moves) {
+        if (depth == 3) {
+            moves.add(new HiveMove(originalTile, tile, false));
+            return;
+        }
+        visited.add(tile);
+
+        for (Hex neighbour : tile.getNeighbours()) {
+            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
+            spiderMoveToDepth(boardState, neighbour, originalTile, depth + 1, visited, moves);
+        }
     }
 
     private List<HiveMove> soldierAntMoves(HiveBoardState boardState, HiveTile hiveTile) {
@@ -99,38 +141,8 @@ public class HiveRuleEngine {
 
         return hopDirection(boardState, neighbour, direction);
     }
-    
-    private List<HiveMove> spiderMoves(HiveBoardState boardState, HiveTile hiveTile) {
-        List<HiveMove> moves = new ArrayList<>();
-        
-        for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
-            if (boardState.hasTileAtHex(neighbour)) continue;
-            HashSet<Hex> visited = new HashSet<>();
-            visited.add(hiveTile.getHex());
 
-            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
-
-
-            visited.add(neighbour);
-            spiderMoveToDepth(boardState, neighbour, hiveTile, 1, visited, moves);
-        }
-
-        return moves;
-    }
-
-    private void spiderMoveToDepth(HiveBoardState boardState, Hex tile, HiveTile originalTile, int depth, HashSet<Hex> visited, List<HiveMove> moves) {
-        if (depth == 3) {
-            moves.add(new HiveMove(originalTile, tile, false));
-            return;
-        }
-        visited.add(tile);
-        
-        for (Hex neighbour : tile.getNeighbours()) {
-            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
-            spiderMoveToDepth(boardState, neighbour, originalTile, depth + 1, visited, moves);
-        }
-    }
-
+    // I think this needs to be reversed
     private boolean isEmptyConnectedPosition(HiveBoardState boardState, Hex hex, HashSet<Hex> visited) {
         if (boardState.hasTileAtHex(hex)) return true;
         if (visited.contains(hex)) return true;

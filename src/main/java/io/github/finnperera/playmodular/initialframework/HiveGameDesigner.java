@@ -1,6 +1,7 @@
 package io.github.finnperera.playmodular.initialframework;
 
 import javafx.application.Application;
+import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -27,7 +28,8 @@ public class HiveGameDesigner extends Application {
     double offsetX;
     double offsetY;
     Button selectModeButton = new Button("Select Mode");
-    private MapBasedStorage<Hex, HiveTile> storage = new MapBasedStorage<>();
+
+    private HiveBoardState hiveBoardState = new HiveBoardState();
 
     private boolean selectTileMode = false;
     private Hex selectedHex = null;
@@ -175,8 +177,8 @@ public class HiveGameDesigner extends Application {
     private void toggleMovesShowing(Pane main) {
         clearHighlightedMoves(main);
         if (selectedHex != null) {
-            HiveTile piece = storage.getPieceAt(selectedHex);
-            List<HiveMove> moves = ruleEngine.generatePieceMoves(new HiveBoardState(storage), piece);
+            HiveTile piece = hiveBoardState.getPieceAt(selectedHex);
+            List<HiveMove> moves = ruleEngine.generatePieceMoves(hiveBoardState, piece); // maybe should make new board state?
             for (HiveMove move : moves) {
                 highlightValidHexMove(move.getNextPosition(), main);
             }
@@ -271,19 +273,28 @@ public class HiveGameDesigner extends Application {
         return piece;
     }
 
+    // if there is a hex under the one you remove, draw it?
     private void removeHexAt(Hex hex, Pane container) {
-        String id = hex.getQ() + " " + hex.getR();
-        container.getChildren().removeIf(node -> id.equals(node.getId()));
-        storage.removePieceAt(hex);
+        Node tile = getTileNodeAt(hex, container);
+        if (tile == null) return;
+
+        container.getChildren().remove(tile);
+        if (hiveBoardState.hasPieceAt(hex)) {
+            hiveBoardState.removePieceAt(hex);
+        }
     }
 
     private Node getTileNodeAt(Hex hex, Pane container) {
         String id = hex.getQ() + " " + hex.getR();
-        return container.getChildren()
-                .stream()
-                .filter(node -> id.equals(node.getId()))
-                .findFirst()
-                .orElse(null);
+        ObservableList<Node> children = container.getChildren();
+
+        for (int i = children.size() - 1; i >= 0; i--) {
+            if (id.equals(children.get(i).getId())) {
+                return children.get(i);
+            }
+        }
+
+        return null;
     }
 
     private void placeHexAt(int q, int r, double hexSize, Pane container) {
@@ -296,11 +307,13 @@ public class HiveGameDesigner extends Application {
         double centerY = pixelCoords[1];
 
         Hex position = new Hex(q, r, -q - r);
-        if (storage.hasPieceAt(position)) {
-            storage.removePieceAt(position);
-            removeHexAt(position, container);
-        }
 
+        renderTile(q, r, hexSize, container, centerX, centerY);
+
+        hiveBoardState.placePiece(position, new HiveTile(curTileType, position, curColour));
+    }
+
+    private void renderTile(int q, int r, double hexSize, Pane container, double centerX, double centerY) {
         Group hex = createHexagon(centerX, centerY, hexSize, getPieceColor(curTileType));
         Polygon hexagon = (Polygon) hex.getChildren().getFirst();
         hex.setId(q + " " + r);
@@ -308,9 +321,16 @@ public class HiveGameDesigner extends Application {
         hexagon.setStrokeWidth(1);
 
         container.getChildren().add(hex);
+    }
 
+    private void renderTile(int q, int r, double hexSize, Pane container, double centerX, double centerY, HiveTile tile) {
+        Group hex = createHexagon(centerX, centerY, hexSize, getPieceColor(tile.getTileType()));
+        Polygon hexagon = (Polygon) hex.getChildren().getFirst();
+        hex.setId(q + " " + r);
+        hexagon.setFill(Color.valueOf(tile.getColour().toString()));
+        hexagon.setStrokeWidth(1);
 
-        storage.placePieceAt(position, new HiveTile(curTileType, position, curColour));
+        container.getChildren().add(hex);
     }
 
     private void updatePreviewHex(int q, int r) {
