@@ -8,13 +8,14 @@ public class HiveRuleEngine {
     public HiveRuleEngine() {}
 
     public List<HiveMove> generatePieceMoves(HiveBoardState boardState, HiveTile hiveTile) {
+        if(!isOneHiveWhileMoving(boardState, hiveTile)) return Collections.emptyList();
         List<HiveMove> moves = new ArrayList<>();
         switch (hiveTile.getTileType()) {
             case QUEEN_BEE -> moves = queenMoves(boardState, hiveTile);
             case BEETLE -> moves = queenMoves(boardState, hiveTile);
-            case SPIDER -> moves = queenMoves(boardState, hiveTile);
+            case SPIDER -> moves = spiderMoves(boardState, hiveTile);
             case ANT -> moves = soldierAntMoves(boardState, hiveTile);
-            case GRASSHOPPER -> moves = queenMoves(boardState, hiveTile);
+            case GRASSHOPPER -> moves = grassHopperMoves(boardState, hiveTile);
         }
         return moves;
     }
@@ -31,9 +32,6 @@ public class HiveRuleEngine {
             // free to move
             //if (!isFreeToMove(boardState, hiveTile, neighbouringTile)) continue;
 
-            // remains one hive
-            // still might not work
-            if (!isOneHiveWhileMoving(boardState, hiveTile)) continue;
 
             // check next position is still connected to hive?
             boolean hasNeighbours = false;
@@ -56,7 +54,6 @@ public class HiveRuleEngine {
     }
 
     private List<HiveMove> soldierAntMoves(HiveBoardState boardState, HiveTile hiveTile) {
-        if(!isOneHiveWhileMoving(boardState, hiveTile)) return Collections.emptyList();
         List<HiveMove> moves = new ArrayList<>();
 
         Queue<Hex> queue = new LinkedList<>();
@@ -67,19 +64,7 @@ public class HiveRuleEngine {
             Hex next =  queue.poll();
 
             for (Hex hex : next.getNeighbours()) {
-                if (boardState.hasTileAtHex(hex)) continue; // if piece skip, cant move into it
-                if (visited.contains(hex)) continue;
-                visited.add(hex);
-                // check if you can move into it
-                //isFreeToMove() // wont work if i do it based on hive moves alone.... :( but could just do it off previous hex, maybe need a recursion here?
-
-                // check if it will have at least one neighbour
-                boolean neighbourFound = false;
-                for (Hex neighbour : hex.getNeighbours()) {
-                    if (visited.contains(neighbour)) continue; // if hex is visited
-                    if (boardState.hasTileAtHex(neighbour)) neighbourFound = true;
-                }
-                if (!neighbourFound) continue;
+                if (isEmptyConnectedPosition(boardState, hex, visited)) continue;
 
                 queue.add(hex);
             }
@@ -88,6 +73,78 @@ public class HiveRuleEngine {
             }
         }
         return moves;
+    }
+
+    private List<HiveMove> grassHopperMoves(HiveBoardState boardState, HiveTile hiveTile) {
+        List<HiveMove> moves = new ArrayList<>();
+        // grasshopper:
+        // can only hop over other tiles
+        // ignores free to move rule
+        // will land at the first empty space available
+
+        for (int i = 0; i < 6; i++) { // this doesn't feel modular, should change
+            if (!boardState.hasTileAtHex(Hex.hexNeighbour(hiveTile.getHex(), i))) continue;
+            moves.add(new HiveMove(
+                            hiveTile,
+                            hopDirection(boardState, Hex.hexNeighbour(hiveTile.getHex(), i), i),
+                            false));
+        }
+
+        return moves;
+    }
+
+    private Hex hopDirection(HiveBoardState boardState, Hex tile, int direction) {
+        Hex neighbour = Hex.hexNeighbour(tile, direction);
+        if (!boardState.hasTileAtHex(neighbour)) return neighbour;
+
+        return hopDirection(boardState, neighbour, direction);
+    }
+    
+    private List<HiveMove> spiderMoves(HiveBoardState boardState, HiveTile hiveTile) {
+        List<HiveMove> moves = new ArrayList<>();
+        
+        for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
+            if (boardState.hasTileAtHex(neighbour)) continue;
+            HashSet<Hex> visited = new HashSet<>();
+            visited.add(hiveTile.getHex());
+
+            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
+
+
+            visited.add(neighbour);
+            spiderMoveToDepth(boardState, neighbour, hiveTile, 1, visited, moves);
+        }
+
+        return moves;
+    }
+
+    private void spiderMoveToDepth(HiveBoardState boardState, Hex tile, HiveTile originalTile, int depth, HashSet<Hex> visited, List<HiveMove> moves) {
+        if (depth == 3) {
+            moves.add(new HiveMove(originalTile, tile, false));
+            return;
+        }
+        visited.add(tile);
+        
+        for (Hex neighbour : tile.getNeighbours()) {
+            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
+            spiderMoveToDepth(boardState, neighbour, originalTile, depth + 1, visited, moves);
+        }
+    }
+
+    private boolean isEmptyConnectedPosition(HiveBoardState boardState, Hex hex, HashSet<Hex> visited) {
+        if (boardState.hasTileAtHex(hex)) return true;
+        if (visited.contains(hex)) return true;
+        visited.add(hex);
+        // check if you can move into it
+        //isFreeToMove() // wont work if i do it based on hive moves alone.... :( but could just do it off previous hex, maybe need a recursion here?
+
+        // check if it will have at least one neighbour
+        boolean neighbourFound = false;
+        for (Hex neighbour : hex.getNeighbours()) {
+            if (visited.contains(neighbour)) continue; // if hex is visited
+            if (boardState.hasTileAtHex(neighbour)) neighbourFound = true;
+        }
+        return !neighbourFound;
     }
 
     // might not be useful
