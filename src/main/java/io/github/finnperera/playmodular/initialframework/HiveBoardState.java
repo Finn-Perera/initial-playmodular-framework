@@ -26,7 +26,7 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
 
     @Override
     public HiveTile getPieceAt(Hex position) {
-        return board.getPieceAt(position).peek();
+        return board.hasPieceAt(position) ? board.getPieceAt(position).peek() : null;
     }
 
     // Should be immutable
