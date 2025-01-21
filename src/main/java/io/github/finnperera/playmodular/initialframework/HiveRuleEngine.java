@@ -295,6 +295,9 @@ public class HiveRuleEngine {
         if (boardState.getAllPositions().size() < 2) {
             return true; // may be wrong?
         }
+
+        if (boardState.hasPieceAt(hiveTile.getHex()) && boardState.getBoard().getPieceAt(hiveTile.getHex()).size() > 1) return true;
+
         Hex tile;
         do {
              tile = boardState.getRandomPiece().getHex();
