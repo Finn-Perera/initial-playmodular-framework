@@ -55,8 +55,17 @@ public class HiveRuleEngine {
 
     private List<HiveMove> beetleMoves(HiveBoardState boardState, HiveTile hiveTile) {
         List<HiveMove> moves = new ArrayList<>();
+
+        // This is a temporary fix and will ignore the freedom to move rule
+        if (boardState.getBoard().getPieceAt(hiveTile.getHex()).size() > 1) {
+            for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
+                moves.add(new HiveMove(hiveTile, neighbour, false));
+            }
+            return moves;
+        }
+
         for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
-            if (!isEmptyConnectedPosition(boardState, neighbour, new HashSet<>(Set.of(hiveTile.getHex()))) ||
+            if (!isEmptyUnconnectedPosition(boardState, neighbour, new HashSet<>(Set.of(hiveTile.getHex()))) ||
                     boardState.hasPieceAt(neighbour)) {
                 moves.add(new HiveMove(hiveTile, neighbour, false));
             }
@@ -72,7 +81,7 @@ public class HiveRuleEngine {
             HashSet<Hex> visited = new HashSet<>();
             visited.add(hiveTile.getHex());
 
-            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
+            if (isEmptyUnconnectedPosition(boardState, neighbour, visited)) continue;
 
 
             visited.add(neighbour);
@@ -90,7 +99,7 @@ public class HiveRuleEngine {
         visited.add(tile);
 
         for (Hex neighbour : tile.getNeighbours()) {
-            if (isEmptyConnectedPosition(boardState, neighbour, visited)) continue;
+            if (isEmptyUnconnectedPosition(boardState, neighbour, visited)) continue;
             spiderMoveToDepth(boardState, neighbour, originalTile, depth + 1, visited, moves);
         }
     }
@@ -106,7 +115,7 @@ public class HiveRuleEngine {
             Hex next =  queue.poll();
 
             for (Hex hex : next.getNeighbours()) {
-                if (isEmptyConnectedPosition(boardState, hex, visited)) continue;
+                if (isEmptyUnconnectedPosition(boardState, hex, visited)) continue;
 
                 queue.add(hex);
             }
@@ -142,10 +151,9 @@ public class HiveRuleEngine {
         return hopDirection(boardState, neighbour, direction);
     }
 
-    // I think this needs to be reversed
-    private boolean isEmptyConnectedPosition(HiveBoardState boardState, Hex hex, HashSet<Hex> visited) {
-        if (boardState.hasTileAtHex(hex)) return true;
-        if (visited.contains(hex)) return true;
+    private boolean isEmptyUnconnectedPosition(HiveBoardState boardState, Hex hex, HashSet<Hex> visited) {
+        if (boardState.hasTileAtHex(hex)) return true; // if there is a piece there already
+        if (visited.contains(hex)) return true; // if visited already, preventing duplicates
         visited.add(hex);
         // check if you can move into it
         //isFreeToMove() // wont work if i do it based on hive moves alone.... :( but could just do it off previous hex, maybe need a recursion here?
