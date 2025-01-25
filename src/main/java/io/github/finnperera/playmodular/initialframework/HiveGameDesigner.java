@@ -1,10 +1,9 @@
 package io.github.finnperera.playmodular.initialframework;
 
-import javafx.application.Application;
+import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
@@ -12,16 +11,19 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
-import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
+import java.util.function.Consumer;
 
-public class HiveGameDesigner extends Application {
+public class HiveGameDesigner extends Pane {
     private final HivePlayer player1 = new HivePlayer(HiveColour.WHITE);
     private final HivePlayer player2 = new HivePlayer(HiveColour.BLACK);
+
+    private final Consumer<HiveGame> onCloseCallback;
+
     double hexSize = 30;
     double hexWidth = Math.sqrt(3) * hexSize;
     double hexHeight = 2 * hexSize;
@@ -41,14 +43,13 @@ public class HiveGameDesigner extends Application {
     private HiveRuleEngine ruleEngine = new HiveRuleEngine();
     private Stack<Hex> undoStack = new Stack<>();
 
-    @Override
-    public void start(Stage stage) throws Exception {
-        Pane root = new Pane();
-        Scene scene = new Scene(root, 1280, 640);
-        stage.setTitle("Hive Game Creator");
-        stage.setScene(scene);
-        stage.show();
+    public HiveGameDesigner(Consumer<HiveGame> onCloseCallback) throws Exception {
+        this.onCloseCallback = onCloseCallback;
+        // root is this
+        initialiseUI(this);
+    }
 
+    public void initialiseUI(Pane root) {
         HBox sectionContainer = new HBox();
         VBox buttonContainer = new VBox();
         Pane mainPane = new Pane();
@@ -76,6 +77,16 @@ public class HiveGameDesigner extends Application {
         // test container is to allow filling hands and actually getting moves
         sectionContainer.getChildren().add(testContainer);
         setUpTestPane(testContainer, mainPane);
+
+        // on close
+        Button closeButton = new Button("Finish Designing");
+        closeButton.setOnAction(event -> handleClose());
+        testContainer.getChildren().add(closeButton);
+    }
+
+    private void handleClose() {
+        HiveGame generatedGameState = getGeneratedGame();
+        onCloseCallback.accept(generatedGameState);
     }
 
     public void createButtons(Pane container, Pane mainPane) {
@@ -94,6 +105,7 @@ public class HiveGameDesigner extends Application {
         container.getChildren().add(new Label("Colours"));
 
         for (HiveColour colour : HiveColour.values()) {
+            if (colour == HiveColour.WHITE_AND_BLACK) continue;
             Button button = new Button();
             button.setText(colour.toString());
             button.setOnAction(event -> {
@@ -403,18 +415,13 @@ public class HiveGameDesigner extends Application {
         return new int[]{roundedQ, roundedR};
     }
 
-    private double calculateHexX(int q, int r, double hexWidth, double offsetX) {
-        return offsetX + (q + r / 2.0) * hexWidth;
-    }
-
-    private double calculateHexY(int r, double hexHeight, double offsetY) {
-        return offsetY + r * (hexHeight * 0.75);
-    }
-
     public double[] calculatePixelCoordinates(int q, int r, double hexSize, double offsetX, double offsetY) {
         double x = offsetX + hexSize * Math.sqrt(3) * (q + r / 2.0);
         double y = offsetY + hexSize * 1.5 * r;
         return new double[]{x, y};
     }
 
+    public HiveGame getGeneratedGame() {
+        return new HiveGame(ruleEngine, player1, player2, hiveBoardState);
+    }
 }

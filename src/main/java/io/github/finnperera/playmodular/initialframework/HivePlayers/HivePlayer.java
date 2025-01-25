@@ -1,11 +1,15 @@
-package io.github.finnperera.playmodular.initialframework;
+package io.github.finnperera.playmodular.initialframework.HivePlayers;
+
+import io.github.finnperera.playmodular.initialframework.HiveColour;
+import io.github.finnperera.playmodular.initialframework.HiveTileType;
+import io.github.finnperera.playmodular.initialframework.Player;
 
 import java.util.HashMap;
 
 public class HivePlayer implements Player {
 
     private HashMap<HiveTileType, Integer> tiles;
-    private HiveColour colour;
+    private final HiveColour colour;
 
     public HivePlayer(HiveColour colour) {
         tiles = new HashMap<>();
@@ -27,9 +31,11 @@ public class HivePlayer implements Player {
         tiles.put(HiveTileType.SPIDER, 3);
     }
 
-    public void removeTile(HiveTileType type) {
+    public HashMap<HiveTileType, Integer> removeTile(HiveTileType type) {
         assert tiles.get(type) != null && tiles.get(type) > 0;
-        tiles.put(type, tiles.get(type) - 1);
+        HashMap<HiveTileType, Integer> result = new HashMap<>(tiles);
+        result.put(type, tiles.get(type) - 1);
+        return result;
     }
 
     public int getTypeRemainingTiles(HiveTileType type) {

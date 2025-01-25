@@ -1,5 +1,7 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -68,7 +70,12 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
 
     @Override
     public int getPieceCount() {
-        return board.size();
+        List<Stack<HiveTile>> pieces = board.getAllPieces();
+        int numPieces = 0;
+        for (Stack<HiveTile> piece : pieces) {
+            numPieces += piece.size();
+        }
+        return numPieces;
     }
 
     @Override
@@ -79,14 +86,14 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
         return board.getPieceAt(positions.get(rand.nextInt(positions.size()))).peek();
     }
 
-    // could be more efficient?
     public List<HiveTile> getAllPiecesOfPlayer(HivePlayer player) {
+        List<Stack<HiveTile>> allPositions = board.getAllPieces();
         List<HiveTile> pieces = new ArrayList<>();
-        List<Hex> positions = getAllPositions();
-        HiveColour playerColour = player.getColour();
-        for (Hex hex : positions) {
-            if (playerColour == getPieceAt(hex).getColour()) {
-                pieces.add(getPieceAt(hex));
+        for (Stack<HiveTile> position : allPositions) {
+            for (HiveTile tile : position) {
+                if (player.getColour().equals(tile.getColour())) {
+                    pieces.add(tile);
+                }
             }
         }
         return pieces;
@@ -100,6 +107,17 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
             }
         }
         return queens;
+    }
+
+    public HiveTile getQueenOfPlayer(HivePlayer player) {
+        for (Stack<HiveTile> stack : board.getAllPieces()) {
+            for (HiveTile piece : stack) {
+                if (piece.getTileType() == HiveTileType.QUEEN_BEE && piece.getColour().equals(player.getColour())) {
+                    return piece;
+                }
+            }
+        }
+        return null;
     }
 
     // REMOVE AFTER TESTING
