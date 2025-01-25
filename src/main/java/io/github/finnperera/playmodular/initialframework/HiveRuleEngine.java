@@ -100,6 +100,7 @@ public class HiveRuleEngine {
 
         for (Hex neighbour : tile.getNeighbours()) {
             if (isOccupiedUnconnectedPosition(boardState, neighbour, visited)) continue;
+            if (!isFreeToMove(boardState, neighbour, tile)) continue;
             spiderMoveToDepth(boardState, neighbour, originalTile, depth + 1, visited, moves);
         }
     }
