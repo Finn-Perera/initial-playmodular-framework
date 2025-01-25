@@ -56,7 +56,8 @@ public class HiveRuleEngine {
         List<HiveMove> moves = new ArrayList<>();
 
         // This is a temporary fix and will ignore the freedom to move rule
-        if (boardState.getBoard().getPieceAt(hiveTile.getHex()).size() > 1) {
+        if (boardState.getBoard().hasPieceAt(hiveTile.getHex()) &&
+                boardState.getBoard().getPieceAt(hiveTile.getHex()).size() > 1) {
             for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
                 moves.add(new HiveMove(hiveTile, neighbour, false));
             }
@@ -64,11 +65,13 @@ public class HiveRuleEngine {
         }
 
         for (Hex neighbour : hiveTile.getHex().getNeighbours()) {
-            if (!isFreeToMove(boardState, neighbour, hiveTile.getHex())) continue;
-            if (!isOccupiedUnconnectedPosition(boardState, neighbour, new HashSet<>(Set.of(hiveTile.getHex()))) ||
-                    boardState.hasPieceAt(neighbour)) {
-                moves.add(new HiveMove(hiveTile, neighbour, false));
+            if (boardState.hasPieceAt(neighbour)) {
+                moves.add(new HiveMove(hiveTile, neighbour, false)); // ignores freedom to move
+                continue;
             }
+            if (!isFreeToMove(boardState, neighbour, hiveTile.getHex())) continue;
+            if (isOccupiedUnconnectedPosition(boardState, neighbour, new HashSet<>(Set.of(hiveTile.getHex())))) continue;
+            moves.add(new HiveMove(hiveTile, neighbour, false));
         }
         return moves;
     }
