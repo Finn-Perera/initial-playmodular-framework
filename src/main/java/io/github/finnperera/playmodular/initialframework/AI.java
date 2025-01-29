@@ -2,7 +2,6 @@ package io.github.finnperera.playmodular.initialframework;
 
 import java.util.List;
 
-public interface AI {
-    public Move getNextMove(List<Move> moves); // maybe needs to have the evaluations for each move?
-    // not sure what i should be passing round, moves or board states?
+public interface AI<P, T> {
+    Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P, T>> moves);
 }

@@ -105,7 +105,6 @@ public class HiveGameDesigner extends Pane {
         container.getChildren().add(new Label("Colours"));
 
         for (HiveColour colour : HiveColour.values()) {
-            if (colour == HiveColour.WHITE_AND_BLACK) continue;
             Button button = new Button();
             button.setText(colour.toString());
             button.setOnAction(event -> {

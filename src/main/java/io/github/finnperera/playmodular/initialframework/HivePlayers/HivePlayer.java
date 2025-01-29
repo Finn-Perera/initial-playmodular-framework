@@ -34,7 +34,7 @@ public class HivePlayer implements Player {
     public HashMap<HiveTileType, Integer> removeTile(HiveTileType type) {
         assert tiles.get(type) != null && tiles.get(type) > 0;
         HashMap<HiveTileType, Integer> result = new HashMap<>(tiles);
-        result.put(type, tiles.get(type) - 1);
+        result.put(type, result.get(type) - 1);
         return result;
     }
 
@@ -52,5 +52,10 @@ public class HivePlayer implements Player {
 
     public HashMap<HiveTileType, Integer> getTiles() {
         return tiles;
+    }
+
+    @Override
+    public boolean isAI() {
+        return false;
     }
 }

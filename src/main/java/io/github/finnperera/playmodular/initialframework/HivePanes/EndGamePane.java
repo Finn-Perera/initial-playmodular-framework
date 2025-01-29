@@ -1,5 +1,6 @@
 package io.github.finnperera.playmodular.initialframework.HivePanes;
 
+import io.github.finnperera.playmodular.initialframework.GameResult;
 import io.github.finnperera.playmodular.initialframework.HiveColour;
 import io.github.finnperera.playmodular.initialframework.HiveGame;
 import javafx.geometry.Pos;
@@ -78,25 +79,22 @@ public class EndGamePane extends Pane {
     }
 
     public void setResultLabel() {
-        winningColour = game.getWinner(game);
-        if (winningColour == null) return;
-        if (winningColour == HiveColour.WHITE_AND_BLACK) {
+        GameResult result = game.getGameResult(game.getCurrentPlayer());
+        if (result == null) return; // bug?
+        if (result == GameResult.DRAW) {
             resultLabel.setText("DRAW!");
-        } else if (winningColour == HiveColour.BLACK) {
-            resultLabel.setText("WINNER: " + HiveColour.WHITE);
+        } else if (result == GameResult.WIN) {
+            resultLabel.setText("WINNER: " + game.getCurrentPlayer().getColour().toString());
         } else {
-            resultLabel.setText("WINNER: " + HiveColour.BLACK);
+            resultLabel.setText("WINNER: " + game.getCurrentPlayer().getColour().oppositeColour().toString());
         }
     }
 
-    public void setResultLabel(HiveColour result) {
+    // may need changing
+    public void setResultLabel(GameResult result) {
         assert result != null;
-        if (result == HiveColour.WHITE_AND_BLACK) {
+        if (result == GameResult.DRAW) {
             resultLabel.setText("DRAW!");
-        } else if (result == HiveColour.BLACK) {
-            resultLabel.setText("WINNER: " + HiveColour.WHITE);
-        } else {
-            resultLabel.setText("WINNER: " + HiveColour.BLACK);
         }
     }
 

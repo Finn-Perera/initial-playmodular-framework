@@ -1,5 +1,6 @@
 package io.github.finnperera.playmodular.initialframework.HivePanes;
 
+import io.github.finnperera.playmodular.initialframework.GameResult;
 import io.github.finnperera.playmodular.initialframework.HiveColour;
 import io.github.finnperera.playmodular.initialframework.HiveGame;
 import javafx.scene.control.Label;
@@ -72,7 +73,7 @@ public class HiveGamePane extends StackPane {
         endGamePane.setVisible(true);
     }
 
-    public void showEndGame(HiveColour result) {
+    public void showEndGame(GameResult result) {
         endGamePane.setResultLabel(result);
         endGamePane.setVisible(true);
     }

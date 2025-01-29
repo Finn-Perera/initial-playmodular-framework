@@ -14,12 +14,14 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
         this.board = new MapBasedStorage<>();
     }
 
-    public HiveBoardState(MapBasedStorage<Hex, Stack<HiveTile>> board) {
-        this.board = new MapBasedStorage<>(board);
-    }
-
     public HiveBoardState(HiveBoardState boardState) {
-        this.board = new MapBasedStorage<>(boardState.board);
+        this.board = new MapBasedStorage<>(boardState.board, stack -> {
+            Stack<HiveTile> newStack = new Stack<>();
+            for (HiveTile tile : stack) {
+                newStack.push(new HiveTile(tile.getTileType(), tile.getHex(), tile.getColour()));
+            }
+            return newStack;
+        });
     }
 
     public boolean hasTileAtHex(Hex hex) {
@@ -28,7 +30,9 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
 
     @Override
     public HiveTile getPieceAt(Hex position) {
-        return board.hasPieceAt(position) ? board.getPieceAt(position).peek() : null;
+        if (!board.hasPieceAt(position)) return null;
+        Stack<HiveTile> stack = board.getPieceAt(position);
+        return stack.isEmpty() ? null : stack.peek();
     }
 
     // Should be immutable
@@ -46,9 +50,13 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
     // Should be immutable
     @Override
     public void removePieceAt(Hex position) {
-        assert !board.getPieceAt(position).isEmpty();
-        board.getPieceAt(position).pop();
-        if (board.getPieceAt(position).isEmpty()) {
+        Stack<HiveTile> stack = board.getPieceAt(position);
+        if (stack == null || stack.isEmpty()) {
+            throw new IllegalArgumentException("Trying to remove from an empty position" + position);
+        }
+
+        stack.pop();
+        if (stack.isEmpty()) {
             board.removePieceAt(position);
         }
     }
@@ -81,9 +89,21 @@ public class HiveBoardState implements BoardState<Hex, HiveTile> {
     @Override
     public HiveTile getRandomPiece() {
         List<Hex> positions = getAllPositions();
-        if (positions.isEmpty()) {return null;}
+        if (positions.isEmpty()) {
+            return null;
+        }
+
         Random rand = new Random();
-        return board.getPieceAt(positions.get(rand.nextInt(positions.size()))).peek();
+
+        for (int i = 0; i < positions.size(); i++) {
+            Hex randomPos = positions.get(rand.nextInt(positions.size()));
+            Stack<HiveTile> stack = board.getPieceAt(randomPos);
+
+            if (!stack.isEmpty()) {
+                return stack.peek();
+            }
+        }
+        return null;
     }
 
     public List<HiveTile> getAllPiecesOfPlayer(HivePlayer player) {

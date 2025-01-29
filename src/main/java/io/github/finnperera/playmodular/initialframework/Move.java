@@ -1,15 +1,14 @@
 package io.github.finnperera.playmodular.initialframework;
 
-// May want to make this generic
-public abstract class Move {
-    protected Piece pieceToMove;
-    protected Position nextPosition;
+public abstract class Move<P, T> {
+    protected T pieceToMove;
+    protected P nextPosition;
 
-    public Piece getPieceToMove() {
+    public T getPieceToMove() {
         return pieceToMove;
     }
 
-    public Position getNextPosition() {
+    public P getNextPosition() {
         return nextPosition;
     }
 }

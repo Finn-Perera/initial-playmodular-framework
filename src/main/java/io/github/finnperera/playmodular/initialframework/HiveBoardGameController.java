@@ -1,6 +1,7 @@
 package io.github.finnperera.playmodular.initialframework;
 
 import io.github.finnperera.playmodular.initialframework.HivePanes.HiveGamePane;
+import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         if (selectedTile.getHex() == null) { // Effectively checking if placement or not selected
             HiveTile possibleTile = new HiveTile(selectedTile.getTileType(), clickedHex, selectedTile.getColour());
             HiveMove possibleMove = new HiveMove(possibleTile, clickedHex, true);
-            if (game.isValidMove(game.getBoardState(), possibleMove)) {
+            if (game.isValidMove(possibleMove)) {
                 nextTurn(game.makeMove(possibleMove));
             } else {
                 selectTileOnBoard(clickedHex);
@@ -49,7 +50,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         } else {
             // already have a piece on board selected
             HiveMove possibleMove = new HiveMove(selectedTile, clickedHex, false);
-            if (game.isValidMove(game.getBoardState(), possibleMove)) {
+            if (game.isValidMove(possibleMove)) {
                 nextTurn(game.makeMove(possibleMove));
             } else {
                 selectTileOnBoard(clickedHex);
@@ -66,19 +67,35 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         setListening();
 
         // Check for win state
-        if (game.isTerminalState(game.getBoardState())) {
+        if (game.isTerminalState()) {
             gamePane.showEndGame();
         } else if (game.getAvailableMoves(game.getCurrentPlayer()).isEmpty()) { // check player can move
             nextTurnOfGame.nextTurn(); // this feels wrong?
             nextTurnOfGame = new HiveGame(nextTurnOfGame.getRuleEngine(), nextTurnOfGame.getPlayers().getFirst(), nextTurnOfGame.getPlayers().getLast(), nextTurnOfGame.getBoardState(), nextTurnOfGame.getTurn());
             if (nextTurnOfGame.getAvailableMoves(nextTurnOfGame.getCurrentPlayer()).isEmpty()) {
-                gamePane.showEndGame(HiveColour.WHITE_AND_BLACK); // draw? impossible to reach?
+                gamePane.showEndGame(GameResult.DRAW); // draw? impossible to reach?
             } else {
                 nextTurn(nextTurnOfGame); // shouldn't recur more than once?
             }
         }
 
+        if (game.getCurrentPlayer().isAI() && !game.isTerminalState()) {
+            HiveAI aiPlayer = (HiveAI) game.getCurrentPlayer();
+            makeAITurn(aiPlayer);
+        }
+
         selectedTile = null;
+    }
+
+    private void makeAITurn(HiveAI player) {
+        List<HiveMove> availableMoves = game.getAvailableMoves(player);
+
+        HiveMove bestMove = (HiveMove) player.getNextMove(game, availableMoves); // might be problematic
+
+        if (bestMove != null && game.isValidMove(bestMove)) {
+            game = game.makeMove(bestMove);
+            nextTurn(game);
+        }
     }
 
     private void selectTileOnBoard(Hex clickedHex) {
@@ -104,7 +121,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         } else {
             List<HiveMove> moves = game.getRuleEngine().generatePieceMoves(game.getBoardState(), tile);
             for (HiveMove move : moves) {
-                if (game.isValidMove(game.getBoardState(), move)) {
+                if (game.isValidMove(move)) {
                     hexList.add(move.getNextPosition());
                 }
             }

@@ -2,7 +2,7 @@ package io.github.finnperera.playmodular.initialframework;
 
 import java.util.Objects;
 
-public class HiveMove extends Move {
+public class HiveMove extends Move<Hex, HiveTile> {
 
     private boolean placementMove;
 
@@ -14,12 +14,12 @@ public class HiveMove extends Move {
 
     @Override
     public HiveTile getPieceToMove() {
-        return (HiveTile) super.getPieceToMove();
+        return super.getPieceToMove();
     }
 
     @Override
     public Hex getNextPosition() {
-        return (Hex) super.getNextPosition();
+        return super.getNextPosition();
     }
 
     public boolean isPlacementMove() {
