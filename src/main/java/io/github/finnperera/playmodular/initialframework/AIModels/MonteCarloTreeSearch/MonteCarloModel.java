@@ -2,7 +2,11 @@ package io.github.finnperera.playmodular.initialframework.AIModels.MonteCarloTre
 
 import io.github.finnperera.playmodular.initialframework.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
 /*
@@ -18,8 +22,8 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
 
     public static final double EXPLORATION_CONSTANT = 1.41; // Constant factor for UCB (sqrt(2) is a common val)
     public static final int MAX_MOVES = 300;
-    private MCTSNode<P, T> rootNode;
     private final int iterations;
+    private MCTSNode<P, T> rootNode;
 
     public MonteCarloModel(int iterations) {
         this.iterations = iterations;
@@ -29,19 +33,32 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
     need to prune before doing most of this?
      */
     @Override
-    public Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P,T>> moves) {
+    public Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P, T>> moves) {
         rootNode = new MCTSNode<>(game, null, moves, null); // set root as current game state
 
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        List<Future<?>> futures = new ArrayList<>(numThreads);
+
         for (int i = 0; i < iterations; i++) {
-            System.out.println("Iteration: " + i);
-            MCTSNode<P, T> selectedNode = select();
-            MCTSNode<P, T> expandedNode = expand(selectedNode); // check this
-            MCTSNode<P, T> selectedExpansion = getBestChild(expandedNode);
-            Game<P, T> finalState = simulate(selectedExpansion);
-            backpropagation(finalState, selectedExpansion);
+            futures.add(executor.submit(() -> {
+                MCTSNode<P, T> selectedNode = select();
+                MCTSNode<P, T> expandedNode = expand(selectedNode);
+                MCTSNode<P, T> selectedExpansion = getBestChild(expandedNode);
+                Game<P, T> finalState = simulate(selectedExpansion);
+                backpropagation(finalState, selectedExpansion);
+            }));
         }
 
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
+        executor.shutdown();
         return getBestMove();
     }
 
@@ -114,7 +131,7 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
             GameResult result = game.getGameResult(rootNode.getGameState().getCurrentPlayer());
             if (result == GameResult.WIN) {
                 score = 1;
-            } else if (result == GameResult.LOSS){
+            } else if (result == GameResult.LOSS) {
                 score = -1;
             } else {
                 score = 0;
@@ -123,13 +140,14 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
             score = 0;
         }
 
-        do {
-            returnNode.addValue(score);
-            returnNode = returnNode.getParent();
-        } while (returnNode != null);
+        synchronized (returnNode) {
+            do {
+                returnNode.addValue(score);
+                returnNode = returnNode.getParent();
+            } while (returnNode != null);
+        }
     }
 
-    // Most visits implementation
     private Move<P, T> getBestMove() {
         // fallback
         if (rootNode.getChildren().isEmpty()) {
@@ -138,14 +156,26 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
             return availableMoves.get(ThreadLocalRandom.current().nextInt(availableMoves.size()));
         }
 
-        int highestVisits = -1;
+        // For maximising visits
+        /*int highestVisits = -1;
         Move<P, T> bestMove = null;
         for (MCTSNode<P, T> node : rootNode.getChildren()) {
             if (node.getVisits() > highestVisits) {
                 highestVisits = node.getVisits();
                 bestMove = node.getMoveMade();
             }
+        }*/
+
+        // For Maximising Score
+        double highestScore = Double.NEGATIVE_INFINITY;
+        Move<P, T> bestMove = null;
+        for (MCTSNode<P, T> node : rootNode.getChildren()) {
+            if (node.getTotalValue() > highestScore) {
+                highestScore = node.getTotalValue();
+                bestMove = node.getMoveMade();
+            }
         }
+        System.out.println("Best Move Score: " + highestScore);
         return bestMove;
     }
 

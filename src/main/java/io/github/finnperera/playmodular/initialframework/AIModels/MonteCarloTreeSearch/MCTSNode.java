@@ -5,13 +5,14 @@ import io.github.finnperera.playmodular.initialframework.Move;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MCTSNode<P, T> { // P : Position, T : Tile/Piece
 
     private final Game<P, T> gameState;
     private final MCTSNode<P, T> parent;
     private List<MCTSNode<P, T>> children;
-    private int visits;
+    private AtomicInteger visits;
     private double totalValue;
     private Move<P, T> moveMade;
     private List<? extends Move<P, T>> untriedMoves;
@@ -20,7 +21,7 @@ public class MCTSNode<P, T> { // P : Position, T : Tile/Piece
         this.gameState = gameState;
         this.parent = parent;
         this.children = new ArrayList<>();
-        this.visits = 0;
+        this.visits = new AtomicInteger(0);
         this.totalValue = 0.0;
         this.moveMade = moveMade;
         this.untriedMoves = untriedMoves;
@@ -34,9 +35,9 @@ public class MCTSNode<P, T> { // P : Position, T : Tile/Piece
         }
     }
 
-    public void addValue(double value) {
+    public synchronized void addValue(double value) {
         this.totalValue += value;
-        this.visits++;
+        visits.incrementAndGet();
     }
 
     public MCTSNode<P, T> getParent() {
@@ -48,10 +49,10 @@ public class MCTSNode<P, T> { // P : Position, T : Tile/Piece
     }
 
     public int getVisits() {
-        return visits;
+        return visits.get();
     }
 
-    public double getTotalValue() {
+    public synchronized double getTotalValue() {
         return totalValue;
     }
 
