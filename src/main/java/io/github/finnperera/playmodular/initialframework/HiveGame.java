@@ -1,5 +1,6 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import io.github.finnperera.playmodular.initialframework.HiveHeuristics.BasicHeuristic;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 
@@ -14,6 +15,7 @@ public class HiveGame implements Game<Hex, HiveTile> {
     private HivePlayer player1;
     private HivePlayer player2;
     private int turn;
+    private BasicHeuristic heuristic = new BasicHeuristic(); // change when generalising
 
     public HiveGame(HiveRuleEngine ruleEngine, HivePlayer player1, HivePlayer player2, HiveBoardState boardState) {
         this.ruleEngine = ruleEngine;
@@ -121,7 +123,7 @@ public class HiveGame implements Game<Hex, HiveTile> {
 
     @Override
     public int evaluateBoardState(BoardState<Hex, HiveTile> boardState) {
-        return 0;
+        return heuristic.getEvaluation(this);
     }
 
     @Override
@@ -218,12 +220,12 @@ public class HiveGame implements Game<Hex, HiveTile> {
 
     @Override
     public HivePlayer getCurrentPlayer() {
-        return turn % 2 != 0 ? player1 : player2;
+        return turn % 2 == 0 ? player2 : player1;
     }
 
     @Override
     public HivePlayer getCurrentOpponent() {
-        return turn % 2 == 0 ? player2 : player1;
+        return turn % 2 == 0 ? player1 : player2;
     }
 
     public int getTurn() {

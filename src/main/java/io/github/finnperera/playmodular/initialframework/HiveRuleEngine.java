@@ -14,7 +14,7 @@ public class HiveRuleEngine {
         if (boardState.isBoardEmpty()) {
             return List.of(new Hex(0, 0, 0));
         } else if (boardState.getPieceCount() < 2) {
-            return new Hex(0, 0, 0).getNeighbours(); // works since equals checks for q r s
+            return boardState.getAllPositions().getFirst().getNeighbours();
         }
 
         Hex startTile = boardState.getRandomPiece().getHex();
@@ -70,6 +70,15 @@ public class HiveRuleEngine {
     }
 
     public List<HiveMove> generatePieceMoves(HiveBoardState boardState, HiveTile hiveTile) {
+        if (!boardState.hasPieceAt(hiveTile.getHex())) {
+            throw new IllegalStateException("BoardState does not contain Tile");
+        }
+
+        // If not top of stack, piece cannot move
+        if (!boardState.getPieceAt(hiveTile.getHex()).equals(hiveTile)) {
+            return Collections.emptyList();
+        }
+
         if(!isOneHiveWhileMoving(boardState, hiveTile)) return Collections.emptyList();
         List<HiveMove> moves = new ArrayList<>();
         switch (hiveTile.getTileType()) {

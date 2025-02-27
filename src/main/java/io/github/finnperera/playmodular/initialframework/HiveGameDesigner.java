@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class HiveGameDesigner extends Pane {
@@ -42,6 +43,8 @@ public class HiveGameDesigner extends Pane {
     private Polygon previewHex;
     private HiveRuleEngine ruleEngine = new HiveRuleEngine();
     private Stack<Hex> undoStack = new Stack<>();
+
+    private Spinner<Integer> turnCount = null;
 
     public HiveGameDesigner(Consumer<HiveGame> onCloseCallback) throws Exception {
         this.onCloseCallback = onCloseCallback;
@@ -125,6 +128,22 @@ public class HiveGameDesigner extends Pane {
 
         container.getChildren().add(selectModeButton);
 
+        container.getChildren().add(new Label("Turn:"));
+        turnCount = new Spinner<>(1, Integer.MAX_VALUE, 1);
+        turnCount.setEditable(true);
+        container.getChildren().add(turnCount);
+
+        AtomicInteger evaluation = new AtomicInteger();
+        Label evaluationLabel = new Label("Evaluation: " + evaluation.get());
+        container.getChildren().add(evaluationLabel);
+        Button evaluateStateButton = new Button("Evaluate State");
+        evaluateStateButton.setOnAction(event -> {
+            HiveGame generatedGame = getGeneratedGame();
+            evaluation.set(generatedGame.evaluateBoardState(generatedGame.getBoardState()));
+            evaluationLabel.setText("Evaluation: " + evaluation.get());
+        });
+        container.getChildren().add(evaluateStateButton);
+
         container.getChildren().add(new Label("Undo:"));
         Button undoButton = new Button("Undo");
         selectModeButton.setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
@@ -132,6 +151,8 @@ public class HiveGameDesigner extends Pane {
             if (!undoStack.isEmpty()) {
                 Hex toUndo = undoStack.pop();
                 removeHexAt(toUndo, mainPane);
+
+                turnCount.decrement();
             }
         });
 
@@ -156,6 +177,7 @@ public class HiveGameDesigner extends Pane {
                 toggleOutlineOnTile(selectedHex, container);
             } else {
                 undoStack.add(hex);
+                turnCount.increment();
                 placeHexAt(hexCoordinates[0], hexCoordinates[1], hexSize, container);
             }
         });
@@ -421,6 +443,6 @@ public class HiveGameDesigner extends Pane {
     }
 
     public HiveGame getGeneratedGame() {
-        return new HiveGame(ruleEngine, player1, player2, hiveBoardState);
+        return new HiveGame(ruleEngine, player1, player2, hiveBoardState, turnCount.getValue());
     }
 }
