@@ -19,5 +19,7 @@ public interface Game<P, T> { // P : Position, T : Tile/Piece
 
     public Player getCurrentPlayer();
 
+    public Player getCurrentOpponent();
+
     public GameResult getGameResult(Player player);
 }

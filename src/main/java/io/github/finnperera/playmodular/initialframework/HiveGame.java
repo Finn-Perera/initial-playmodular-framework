@@ -4,9 +4,8 @@ import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class HiveGame implements Game<Hex, HiveTile> {
 
@@ -47,6 +46,7 @@ public class HiveGame implements Game<Hex, HiveTile> {
             moves.addAll(pieceMoves.stream().filter(this::isValidMove).toList());
         });
 
+        Collections.shuffle(moves);
         return moves;
     }
 
@@ -149,13 +149,13 @@ public class HiveGame implements Game<Hex, HiveTile> {
         if (hiveMove.getPieceToMove().getColour() != colour) return false;
 
         if (hiveMove.isPlacementMove()) {
-            return getPlacementMoves(player).stream().anyMatch(Predicate.isEqual(hiveMove));
+            return ruleEngine.isValidPlacePosition(boardState, colour, hiveMove.getNextPosition());
         }
 
-        // PROBLEM - using board state of class, not passed in?
-        boolean queenPlaced = getBoardState().getQueenOfPlayer(player) != null;
-        return queenPlaced && ruleEngine.generatePieceMoves(boardState,
-                hiveMove.getPieceToMove()).stream().anyMatch(Predicate.isEqual(hiveMove));
+        //boolean queenPlaced = getBoardState().getQueenOfPlayer(player) != null;
+        return getBoardState().getQueenOfPlayer(player) != null;
+        // ruleEngine.generatePieceMoves(boardState,
+        //                hiveMove.getPieceToMove()).stream().anyMatch(Predicate.isEqual(hiveMove))
     }
 
 
@@ -219,6 +219,11 @@ public class HiveGame implements Game<Hex, HiveTile> {
     @Override
     public HivePlayer getCurrentPlayer() {
         return turn % 2 != 0 ? player1 : player2;
+    }
+
+    @Override
+    public HivePlayer getCurrentOpponent() {
+        return turn % 2 == 0 ? player2 : player1;
     }
 
     public int getTurn() {

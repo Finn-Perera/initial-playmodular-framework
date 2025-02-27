@@ -20,8 +20,8 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class MonteCarloModel<P, T> implements AI<P, T> {
 
-    public static final double EXPLORATION_CONSTANT = 1.41; // Constant factor for UCB (sqrt(2) is a common val)
-    public static final int MAX_MOVES = 300;
+    public static final double EXPLORATION_CONSTANT = 1.27; // Constant factor for UCB (sqrt(2) is a common val)
+    public static final int MAX_MOVES = 150;
     private final int iterations;
     private MCTSNode<P, T> rootNode;
 
@@ -74,7 +74,7 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
         return current;
     }
 
-    private MCTSNode<P, T> getBestChild(MCTSNode<P, T> node) {
+    private synchronized MCTSNode<P, T> getBestChild(MCTSNode<P, T> node) {
         MCTSNode<P, T> bestChild = null;
         double bestScore = Double.NEGATIVE_INFINITY;
 
@@ -93,7 +93,7 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
         return bestChild;
     }
 
-    private MCTSNode<P, T> expand(MCTSNode<P, T> node) {
+    private synchronized MCTSNode<P, T> expand(MCTSNode<P, T> node) {
         System.out.println("Expand Stage");
 
         if (node.getGameState().isTerminalState()) return node; // end node
@@ -108,7 +108,6 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
         Game<P, T> game = node.getGameState();
         int depth = 0;
         while (!game.isTerminalState() && depth < MAX_MOVES) {
-            System.out.println("Simulating: depth = " + depth);
             List<? extends Move<P, T>> availableMoves = game.getAvailableMoves(game.getCurrentPlayer());
 
             if (availableMoves.isEmpty()) {
@@ -120,12 +119,14 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
 
             depth++;
         }
+        System.out.println("Simulation finished with depth: " + depth);
+
         return game; // return final result
     }
 
     private void backpropagation(Game<P, T> game, MCTSNode<P, T> returnNode) {
         System.out.println("BackPropagating Stage");
-
+        Player lastPlayer = game.getCurrentOpponent();
         double score;
         if (game.isTerminalState()) {
             GameResult result = game.getGameResult(rootNode.getGameState().getCurrentPlayer());
@@ -140,12 +141,15 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
             score = 0;
         }
 
-        synchronized (returnNode) {
-            do {
-                returnNode.addValue(score);
-                returnNode = returnNode.getParent();
-            } while (returnNode != null);
+        MCTSNode<P, T> current = returnNode;
+        while (current != null) {
+            synchronized (current) {
+                    boolean isMaxPlayer = current.getGameState().getCurrentPlayer().equals(lastPlayer);
+                    current.addValue(isMaxPlayer ? score : 1.0 - score);
+            }
+            current = current.getParent();
         }
+
     }
 
     private Move<P, T> getBestMove() {

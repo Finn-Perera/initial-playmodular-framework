@@ -52,10 +52,14 @@ public class HiveRuleEngine {
         return validPositions;
     }
 
-    private boolean isValidPlacePosition(HiveBoardState boardState, HiveColour colour, Hex hex) {
-        assert !boardState.hasPieceAt(hex); // should be empty hex
+    public boolean isValidPlacePosition(HiveBoardState boardState, HiveColour colour, Hex hex) {
+        if (boardState.hasPieceAt(hex)) return false; // should be empty hex
         for (Hex neighbour : hex.getNeighbours()) {
             if (!boardState.hasPieceAt(neighbour)) continue;
+
+            if (boardState.getPieceCount() < 2) {
+                return true;
+            }
 
             if (boardState.getPieceAt(neighbour).getColour() != colour) {
                 return false;

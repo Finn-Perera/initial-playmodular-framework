@@ -2,6 +2,8 @@ package io.github.finnperera.playmodular.initialframework;
 
 import io.github.finnperera.playmodular.initialframework.HivePanes.HiveGamePane;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,26 +41,38 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
             return;
         }
 
+        List<HiveMove> possibleMoves = game.getAvailableMoves(game.getCurrentPlayer());
         if (selectedTile.getHex() == null) { // Effectively checking if placement or not selected
             HiveTile possibleTile = new HiveTile(selectedTile.getTileType(), clickedHex, selectedTile.getColour());
             HiveMove possibleMove = new HiveMove(possibleTile, clickedHex, true);
-            if (game.isValidMove(possibleMove)) {
+            if (possibleMoves.contains(possibleMove)) {
                 nextTurn(game.makeMove(possibleMove));
             } else {
                 selectTileOnBoard(clickedHex);
             }
+            /*if (game.isValidMove(possibleMove)) {
+                nextTurn(game.makeMove(possibleMove));
+            } else {
+                selectTileOnBoard(clickedHex);
+            }*/
         } else {
             // already have a piece on board selected
             HiveMove possibleMove = new HiveMove(selectedTile, clickedHex, false);
-            if (game.isValidMove(possibleMove)) {
+            if (possibleMoves.contains(possibleMove)) {
                 nextTurn(game.makeMove(possibleMove));
             } else {
                 selectTileOnBoard(clickedHex);
             }
+            /*if (game.isValidMove(possibleMove)) {
+                nextTurn(game.makeMove(possibleMove));
+            } else {
+                selectTileOnBoard(clickedHex);
+            }*/
         }
     }
 
     private void nextTurn(HiveGame nextTurnOfGame) {
+
         this.game = nextTurnOfGame;
         currentPlayerColour = game.getCurrentPlayer().getColour();
 
@@ -90,12 +104,28 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     private void makeAITurn(HiveAI player) {
         List<HiveMove> availableMoves = game.getAvailableMoves(player);
 
-        HiveMove bestMove = (HiveMove) player.getNextMove(game, availableMoves); // might be problematic
+        Task<HiveMove> aiTask = new Task<>() {
+            @Override
+            protected HiveMove call() {
+                return (HiveMove) player.getNextMove(game, availableMoves);
+            }
+        };
 
-        if (bestMove != null && game.isValidMove(bestMove)) {
-            game = game.makeMove(bestMove);
-            nextTurn(game);
-        }
+        aiTask.setOnSucceeded(event -> {
+            HiveMove aiMove = aiTask.getValue();
+            if (aiMove != null) {
+                Platform.runLater(() -> {
+                    game = game.makeMove(aiMove);
+                    nextTurn(game);
+                });
+            }
+        });
+
+        aiTask.setOnFailed(event -> {
+            aiTask.getException().printStackTrace(); // could expand this
+        });
+
+        new Thread(aiTask).start();
     }
 
     private void selectTileOnBoard(Hex clickedHex) {
