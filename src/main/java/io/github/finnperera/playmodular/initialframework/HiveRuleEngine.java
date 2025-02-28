@@ -285,7 +285,12 @@ public class HiveRuleEngine {
             return true; // may be wrong?
         }
 
-        if (boardState.hasPieceAt(hiveTile.getHex()) && boardState.getBoard().getPieceAt(hiveTile.getHex()).size() > 1) return true;
+        // Doesn't care for free to move rule
+        boolean boardContainsPiece = boardState.hasPieceAt(hiveTile.getHex());
+        if (boardContainsPiece) {
+            Stack<HiveTile> tileStack = boardState.getBoard().getPieceAt(hiveTile.getHex());
+            if (tileStack.size() > 1 && tileStack.peek() == hiveTile) return true;
+        }
 
         Hex tile;
         do {
