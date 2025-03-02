@@ -6,7 +6,7 @@ import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BasicHeuristic {
+public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
     // These variables could be adjusted in menus
     public static int WIN_SCORE = Integer.MAX_VALUE;
     public static int LOSE_SCORE = Integer.MIN_VALUE;
@@ -22,14 +22,31 @@ public class BasicHeuristic {
     public static int SPIDER_TILE_VALUE = 50;
 
 
-    public int getEvaluation(HiveGame game) {
-        HivePlayer maxPlayer = game.getCurrentPlayer();
-        HivePlayer minPlayer = game.getCurrentOpponent();
+    public int getEvaluation(Game<Hex, HiveTile> game) {
+        HiveGame hiveGame = (HiveGame) game;
+
+        HivePlayer maxPlayer = hiveGame.getCurrentPlayer();
+        HivePlayer minPlayer = hiveGame.getCurrentOpponent();
         int evaluationScore = 0;
-        evaluationScore += winOrLose(game, maxPlayer);
-        evaluationScore += ownQueenSurrounded(game, maxPlayer);
-        evaluationScore += opponentQueenSurrounded(game, minPlayer);
-        evaluationScore += stuckPieces(game, maxPlayer);
+        evaluationScore += winOrLose(hiveGame, maxPlayer);
+        evaluationScore += ownQueenSurrounded(hiveGame, maxPlayer);
+        evaluationScore += opponentQueenSurrounded(hiveGame, minPlayer);
+        evaluationScore += stuckPieces(hiveGame, maxPlayer);
+
+        return evaluationScore;
+    }
+
+    public int getEvaluation(Game<Hex, HiveTile> game, Player maxPlayer) {
+        HiveGame hiveGame = (HiveGame) game;
+        HivePlayer hiveMaxPlayer = (HivePlayer) maxPlayer;
+
+        assert hiveGame.getPlayers().contains(hiveMaxPlayer);
+        HivePlayer minPlayer = hiveGame.getCurrentPlayer() == hiveMaxPlayer ? hiveGame.getCurrentOpponent() : hiveGame.getCurrentPlayer();
+        int evaluationScore = 0;
+        evaluationScore += winOrLose(hiveGame, hiveMaxPlayer);
+        evaluationScore += ownQueenSurrounded(hiveGame, hiveMaxPlayer);
+        evaluationScore += opponentQueenSurrounded(hiveGame, minPlayer);
+        evaluationScore += stuckPieces(hiveGame, hiveMaxPlayer);
 
         return evaluationScore;
     }

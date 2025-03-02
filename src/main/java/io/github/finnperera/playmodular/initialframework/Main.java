@@ -1,11 +1,14 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import io.github.finnperera.playmodular.initialframework.AIModels.Minimax.MinimaxModel;
 import io.github.finnperera.playmodular.initialframework.AIModels.MonteCarloTreeSearch.MonteCarloModel;
+import io.github.finnperera.playmodular.initialframework.HiveHeuristics.BasicHeuristic;
 import io.github.finnperera.playmodular.initialframework.HivePanes.HiveGamePane;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -21,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
      */
 public class Main extends Application {
 
+    HiveAI selectedAI = null;
+
     @Override
     public void start(Stage stage) {
         Pane root = new HBox();
@@ -29,6 +34,7 @@ public class Main extends Application {
         stage.setScene(scene);
 
         initialiseGameStateButton(root, scene, stage);
+        createOpponentChoiceBox(root);
         createGameButton(stage, root);
         stage.show();
     }
@@ -56,7 +62,7 @@ public class Main extends Application {
 
         root.getChildren().add(createGameState);
     }
-    
+
     public CompletableFuture<HiveGame> onDesignGameButtonClicked(Scene priorScene, Stage stage) throws Exception {
         CompletableFuture<HiveGame> future = new CompletableFuture<>();
         GameDesignerService designerService = new GameDesignerService(stage);
@@ -65,12 +71,35 @@ public class Main extends Application {
         return future;
     }
 
+    private void createOpponentChoiceBox(Pane root) {
+        ChoiceBox<String> opponentChoiceBox = new ChoiceBox<>();
+        opponentChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax");
+        opponentChoiceBox.setValue("Human");
+        opponentChoiceBox.setOnAction(event -> {
+            switch (opponentChoiceBox.getValue()) {
+                case "Monte Carlo" -> selectedAI = new HiveAI(HiveColour.BLACK,
+                        new MonteCarloModel<>(50));
+                case "Minimax" -> {
+                    selectedAI = new HiveAI(HiveColour.BLACK, null);
+                    selectedAI.setModel(new MinimaxModel<>(selectedAI, new BasicHeuristic()));
+                }
+                case null, default -> selectedAI = null;
+            }
+        });
+        root.getChildren().add(opponentChoiceBox);
+    }
+
+
     private void createGameButton(Stage stage, Pane root) {
         Button createGameButton = new Button("Create Game");
         createGameButton.setOnAction(event -> {
-            HiveAI aiPlayer = new HiveAI(HiveColour.BLACK, new MonteCarloModel<>(50));
-            //onGameButtonClicked(stage, new HiveGame(new HiveRuleEngine(), new HivePlayer(HiveColour.WHITE), new HivePlayer(HiveColour.BLACK), new HiveBoardState()));
-            onGameButtonClicked(stage, new HiveGame(new HiveRuleEngine(), new HivePlayer(HiveColour.WHITE), aiPlayer, new HiveBoardState()));
+            HiveGame game;
+            if (selectedAI == null) {
+                game = new HiveGame(new HiveRuleEngine(), new HivePlayer(HiveColour.WHITE), new HivePlayer(HiveColour.BLACK), new HiveBoardState());
+            } else {
+                game = new HiveGame(new HiveRuleEngine(), new HivePlayer(HiveColour.WHITE), selectedAI, new HiveBoardState());
+            }
+            onGameButtonClicked(stage, game);
         });
         root.getChildren().add(createGameButton);
     }
