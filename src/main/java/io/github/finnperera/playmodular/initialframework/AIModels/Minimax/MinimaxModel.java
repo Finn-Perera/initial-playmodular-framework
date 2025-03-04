@@ -37,7 +37,9 @@ public class MinimaxModel<P, T> implements AI<P, T> {
 
     private int minimax(MinimaxNode<P, T> node, int depth, boolean maxPlayer) {
         if (depth == 0 || node.getGameState().isTerminalState()) {
-            return heuristic.getEvaluation(node.getGameState(), this.maxPlayer);
+            int score = heuristic.getEvaluation(node.getGameState(), this.maxPlayer);
+            node.setValue(score);
+            return score;
         }
 
         // expand here since depth != 0 and not terminal?

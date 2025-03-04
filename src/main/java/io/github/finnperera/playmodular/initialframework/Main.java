@@ -1,5 +1,6 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import io.github.finnperera.playmodular.initialframework.AIModels.Minimax.AlphaBetaMinimaxModel;
 import io.github.finnperera.playmodular.initialframework.AIModels.Minimax.MinimaxModel;
 import io.github.finnperera.playmodular.initialframework.AIModels.MonteCarloTreeSearch.MonteCarloModel;
 import io.github.finnperera.playmodular.initialframework.HiveHeuristics.BasicHeuristic;
@@ -73,7 +74,7 @@ public class Main extends Application {
 
     private void createOpponentChoiceBox(Pane root) {
         ChoiceBox<String> opponentChoiceBox = new ChoiceBox<>();
-        opponentChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax");
+        opponentChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax", "Alpha-Beta");
         opponentChoiceBox.setValue("Human");
         opponentChoiceBox.setOnAction(event -> {
             switch (opponentChoiceBox.getValue()) {
@@ -82,6 +83,10 @@ public class Main extends Application {
                 case "Minimax" -> {
                     selectedAI = new HiveAI(HiveColour.BLACK, null);
                     selectedAI.setModel(new MinimaxModel<>(selectedAI, new BasicHeuristic()));
+                }
+                case "Alpha-Beta" -> {
+                    selectedAI = new HiveAI(HiveColour.BLACK, null);
+                    selectedAI.setModel(new AlphaBetaMinimaxModel<>(selectedAI, new BasicHeuristic()));
                 }
                 case null, default -> selectedAI = null;
             }
