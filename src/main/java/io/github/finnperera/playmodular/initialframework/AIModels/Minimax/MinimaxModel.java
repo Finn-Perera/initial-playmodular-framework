@@ -36,7 +36,7 @@ public class MinimaxModel<P, T> implements AI<P, T> {
     }
 
     private int minimax(Game<P, T> gameState, int depth, boolean maxPlayer) {
-        if (depth == 0 || gameState.isTerminalState()) {
+        if (depth <= 0 || gameState.isTerminalState()) {
             return heuristic.getEvaluation(gameState, this.maxPlayer);
         }
 
