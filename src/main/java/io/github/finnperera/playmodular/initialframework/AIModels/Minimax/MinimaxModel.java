@@ -6,7 +6,7 @@ import java.util.List;
 
 public class MinimaxModel<P, T> implements AI<P, T> {
 
-    private static final int MAX_DEPTH = 4;
+    private static final int MAX_DEPTH = 2;
     private final Player maxPlayer;
     private final Heuristic<P, T> heuristic;
 
@@ -17,8 +17,7 @@ public class MinimaxModel<P, T> implements AI<P, T> {
 
     @Override
     public Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P, T>> moves) {
-        //MinimaxNode<P, T> rootNode =  new MinimaxNode<>(game, null, null);
-        System.out.println("Beginning minimax:\n");
+        //System.out.println("Beginning minimax:\n");
         Move<P, T> bestMove = null;
         int bestVal = Integer.MIN_VALUE;
 
@@ -40,17 +39,10 @@ public class MinimaxModel<P, T> implements AI<P, T> {
             return heuristic.getEvaluation(gameState, this.maxPlayer);
         }
 
-        // expand here since depth != 0 and not terminal?
         List<? extends Move<P, T>> moves = gameState.getAvailableMoves(gameState.getCurrentPlayer());
         if (moves.isEmpty()) {
-            // this line could cause problems?
             return minimax(gameState.handleNoAvailableMoves(), depth - 1, !maxPlayer);
         }
-//        } else {
-//            for (Move<P, T> move : moves) {
-//                node.getChildren().add(new MinimaxNode<>(node.getGameState().makeMove(move), node, move));
-//            }
-//        }
 
         int bestVal = maxPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
@@ -65,16 +57,7 @@ public class MinimaxModel<P, T> implements AI<P, T> {
             }
         }
 
-        /*if (maxPlayer) {
-            for (MinimaxNode<P, T> child : node.getChildren()) {
-               bestVal  = Math.max(, minimax(child, depth - 1, false));
-            }
-        } else {
-            for (MinimaxNode<P, T> child : node.getChildren()) {
-               bestVal  = Math.min(, minimax(child, depth - 1, true));
-            }
-        }*/
-        System.out.println("Value at depth " + depth + ": " + bestVal);
+        //System.out.println("Value at depth " + depth + ": " + bestVal);
         return bestVal;
     }
 }

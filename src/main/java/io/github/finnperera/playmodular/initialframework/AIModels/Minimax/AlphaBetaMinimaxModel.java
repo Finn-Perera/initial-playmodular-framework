@@ -6,7 +6,7 @@ import java.util.List;
 
 public class AlphaBetaMinimaxModel<P, T> implements AI<P, T> {
 
-    private static final int MAX_DEPTH = 4;
+    private static final int MAX_DEPTH = 2;
     private final Player maxPlayer;
     private final Heuristic<P, T> heuristic;
 
@@ -17,9 +17,7 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T> {
 
     @Override
     public Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P, T>> moves) {
-        //MinimaxNode<P, T> rootNode =  new MinimaxNode<>(game, null, null);
-
-        System.out.println("Beginning Alpha-Beta Minimax:\n");
+        //System.out.println("Beginning Alpha-Beta Minimax:\n");
         Move<P, T> bestMove = null;
         int bestVal = Integer.MIN_VALUE;
 
@@ -35,22 +33,15 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T> {
         return bestMove;
     }
 
-    private int minimax(Game<P,T> gameState, int alpha, int beta, int depth, boolean maxPlayer) {
+    private int minimax(Game<P, T> gameState, int alpha, int beta, int depth, boolean maxPlayer) {
         if (depth <= 0 || gameState.isTerminalState()) {
             return heuristic.getEvaluation(gameState, this.maxPlayer);
         }
 
-        // expand here since depth != 0 and not terminal?
         List<? extends Move<P, T>> moves = gameState.getAvailableMoves(gameState.getCurrentPlayer());
         if (moves.isEmpty()) {
-            // this line could cause problems?
             return minimax(gameState.handleNoAvailableMoves(), depth - 1, alpha, beta, !maxPlayer);
         }
-//        } else {
-//            for (Move<P, T> move : moves) {
-//                node.getChildren().add(new MinimaxNode<>(node.getGameState().makeMove(move), node, move));
-//            }
-//        }
 
         int bestVal = maxPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
