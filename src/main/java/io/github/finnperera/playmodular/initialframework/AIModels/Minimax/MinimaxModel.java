@@ -24,10 +24,10 @@ public class MinimaxModel<P, T> implements AI<P, T> {
 
         for (Move<P, T> move : moves) {
             Game<P, T> newState = game.makeMove(move);
-            int moveValue = minimax(newState, MAX_DEPTH, false);
+            int moveVal = minimax(newState, MAX_DEPTH, false);
 
-            if (moveValue > bestVal) {
-                bestVal = moveValue;
+            if (moveVal > bestVal) {
+                bestVal = moveVal;
                 bestMove = move;
             }
         }
@@ -44,7 +44,7 @@ public class MinimaxModel<P, T> implements AI<P, T> {
         List<? extends Move<P, T>> moves = gameState.getAvailableMoves(gameState.getCurrentPlayer());
         if (moves.isEmpty()) {
             // this line could cause problems?
-            return minimax(gameState.handleNoAvailableMoves(), depth - 1, maxPlayer);
+            return minimax(gameState.handleNoAvailableMoves(), depth - 1, !maxPlayer);
         }
 //        } else {
 //            for (Move<P, T> move : moves) {
@@ -56,7 +56,7 @@ public class MinimaxModel<P, T> implements AI<P, T> {
 
         for (Move<P, T> move : moves) {
             Game<P, T> newState = gameState.makeMove(move);
-            int val = minimax(newState, depth - 1, maxPlayer);
+            int val = minimax(newState, depth - 1, !maxPlayer);
 
             if (maxPlayer) {
                 bestVal = Math.max(bestVal, val);

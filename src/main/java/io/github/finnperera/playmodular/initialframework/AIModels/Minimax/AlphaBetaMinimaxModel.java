@@ -6,6 +6,7 @@ import java.util.List;
 
 public class AlphaBetaMinimaxModel<P, T> implements AI<P, T> {
 
+    private static final int MAX_DEPTH = 4;
     private final Player maxPlayer;
     private final Heuristic<P, T> heuristic;
 
@@ -16,65 +17,61 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T> {
 
     @Override
     public Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P, T>> moves) {
-        MinimaxNode<P, T> rootNode =  new MinimaxNode<>(game, null, null);
+        //MinimaxNode<P, T> rootNode =  new MinimaxNode<>(game, null, null);
 
-        System.out.println("Root Node Created\n Beginning Alpha-Beta Minimax:\n");
-
-        int result = minimax(rootNode, Integer.MIN_VALUE, Integer.MAX_VALUE, 4, true);
-        rootNode.setValue(result);
-
-        System.out.println("Value returned to root(?): " + rootNode.getValue());
-
-        int bestVal = Integer.MIN_VALUE;
+        System.out.println("Beginning Alpha-Beta Minimax:\n");
         Move<P, T> bestMove = null;
-        for (MinimaxNode<P, T> child : rootNode.getChildren()) {
-            if (child.getValue() >= bestVal) {
-                bestVal = child.getValue();
-                bestMove = child.getMoveMade();
+        int bestVal = Integer.MIN_VALUE;
+
+        for (Move<P, T> move : moves) {
+            Game<P, T> newState = game.makeMove(move);
+            int moveVal = minimax(newState, Integer.MIN_VALUE, Integer.MAX_VALUE, MAX_DEPTH, false);
+
+            if (moveVal > bestVal) {
+                bestVal = moveVal;
+                bestMove = move;
             }
         }
         return bestMove;
     }
 
-    private int minimax(MinimaxNode<P, T> node, int alpha, int beta, int depth, boolean maxPlayer) {
-        if (depth == 0 || node.getGameState().isTerminalState()) {
-            int score = heuristic.getEvaluation(node.getGameState(), this.maxPlayer);
-            node.setValue(score);
-            return score;
+    private int minimax(Game<P,T> gameState, int alpha, int beta, int depth, boolean maxPlayer) {
+        if (depth == 0 || gameState.isTerminalState()) {
+            return heuristic.getEvaluation(gameState, this.maxPlayer);
         }
 
         // expand here since depth != 0 and not terminal?
-        List<? extends Move<P, T>> moves = node.getGameState().getAvailableMoves(node.getGameState().getCurrentPlayer());
+        List<? extends Move<P, T>> moves = gameState.getAvailableMoves(gameState.getCurrentPlayer());
         if (moves.isEmpty()) {
             // this line could cause problems?
-            node.getChildren().add(new MinimaxNode<>(node.getGameState().handleNoAvailableMoves(), node, null));
-        } else {
-            for (Move<P, T> move : moves) {
-                node.getChildren().add(new MinimaxNode<>(node.getGameState().makeMove(move), node, move));
-            }
+            return minimax(gameState.handleNoAvailableMoves(), depth - 1, alpha, beta, !maxPlayer);
         }
+//        } else {
+//            for (Move<P, T> move : moves) {
+//                node.getChildren().add(new MinimaxNode<>(node.getGameState().makeMove(move), node, move));
+//            }
+//        }
 
-        int val;
+        int bestVal = maxPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
-        if (maxPlayer) {
-            val = Integer.MIN_VALUE;
-            for (MinimaxNode<P, T> child : node.getChildren()) {
-                val = Math.max(val, minimax(child, alpha, beta, depth - 1, false));
+        for (Move<P, T> move : moves) {
+            Game<P, T> newState = gameState.makeMove(move);
+            int val = minimax(newState, alpha, beta, depth - 1, !maxPlayer);
+
+            if (maxPlayer) {
+                bestVal = Math.max(bestVal, val);
                 alpha = Math.max(alpha, val);
 
                 if (beta <= alpha) break;
-            }
-        } else {
-            val = Integer.MAX_VALUE;
-            for (MinimaxNode<P, T> child : node.getChildren()) {
-                val = Math.min(val, minimax(child, alpha, beta, depth - 1, true));
+            } else {
+                bestVal = Math.min(bestVal, val);
                 beta = Math.min(beta, val);
 
                 if (beta <= alpha) break;
             }
         }
-        System.out.println("Value at depth " + depth + ": " + val);
-        node.setValue(val);
-        return val;
+
+        System.out.println("Value at depth " + depth + ": " + bestVal);
+        return bestVal;
     }
 }
