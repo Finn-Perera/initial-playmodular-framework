@@ -6,6 +6,7 @@ import java.util.List;
 
 public class MinimaxModel<P, T> implements AI<P, T> {
 
+    private static final int MAX_DEPTH = 2;
     private final Player maxPlayer;
     private final Heuristic<P, T> heuristic;
 
@@ -16,58 +17,47 @@ public class MinimaxModel<P, T> implements AI<P, T> {
 
     @Override
     public Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P, T>> moves) {
-        MinimaxNode<P, T> rootNode =  new MinimaxNode<>(game, null, null);
-
-        System.out.println("Root Node Created\n Beginning minimax:\n");
-
-        minimax(rootNode, 4, true);
-
-        System.out.println("Value returned to root(?): " + rootNode.getValue());
-
-        int bestVal = Integer.MIN_VALUE;
+        //System.out.println("Beginning minimax:\n");
         Move<P, T> bestMove = null;
-        for (MinimaxNode<P, T> child : rootNode.getChildren()) {
-            if (child.getValue() >= bestVal) {
-                bestVal = child.getValue();
-                bestMove = child.getMoveMade();
+        int bestVal = Integer.MIN_VALUE;
+
+        for (Move<P, T> move : moves) {
+            Game<P, T> newState = game.makeMove(move);
+            int moveVal = minimax(newState, MAX_DEPTH, false);
+
+            if (moveVal > bestVal) {
+                bestVal = moveVal;
+                bestMove = move;
             }
         }
+
         return bestMove;
     }
 
-    private int minimax(MinimaxNode<P, T> node, int depth, boolean maxPlayer) {
-        if (depth == 0 || node.getGameState().isTerminalState()) {
-            int score = heuristic.getEvaluation(node.getGameState(), this.maxPlayer);
-            node.setValue(score);
-            return score;
+    private int minimax(Game<P, T> gameState, int depth, boolean maxPlayer) {
+        if (depth <= 0 || gameState.isTerminalState()) {
+            return heuristic.getEvaluation(gameState, this.maxPlayer);
         }
 
-        // expand here since depth != 0 and not terminal?
-        List<? extends Move<P, T>> moves = node.getGameState().getAvailableMoves(node.getGameState().getCurrentPlayer());
+        List<? extends Move<P, T>> moves = gameState.getAvailableMoves(gameState.getCurrentPlayer());
         if (moves.isEmpty()) {
-            // this line could cause problems?
-            node.getChildren().add(new MinimaxNode<>(node.getGameState().handleNoAvailableMoves(), node, null));
-        } else {
-            for (Move<P, T> move : moves) {
-                node.getChildren().add(new MinimaxNode<>(node.getGameState().makeMove(move), node, move));
+            return minimax(gameState.handleNoAvailableMoves(), depth - 1, !maxPlayer);
+        }
+
+        int bestVal = maxPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+
+        for (Move<P, T> move : moves) {
+            Game<P, T> newState = gameState.makeMove(move);
+            int val = minimax(newState, depth - 1, !maxPlayer);
+
+            if (maxPlayer) {
+                bestVal = Math.max(bestVal, val);
+            } else {
+                bestVal = Math.min(bestVal, val);
             }
         }
 
-        int val;
-
-        if (maxPlayer) {
-            val = Integer.MIN_VALUE;
-            for (MinimaxNode<P, T> child : node.getChildren()) {
-                val = Math.max(val, minimax(child, depth - 1, false));
-            }
-        } else {
-            val = Integer.MAX_VALUE;
-            for (MinimaxNode<P, T> child : node.getChildren()) {
-                val = Math.min(val, minimax(child, depth - 1, true));
-            }
-        }
-        System.out.println("Value at depth " + depth + ": " + val);
-        node.setValue(val);
-        return val;
+        //System.out.println("Value at depth " + depth + ": " + bestVal);
+        return bestVal;
     }
 }
