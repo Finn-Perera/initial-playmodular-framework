@@ -8,8 +8,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
     // These variables could be adjusted in menus
-    public static int WIN_SCORE = Integer.MAX_VALUE;
-    public static int LOSE_SCORE = Integer.MIN_VALUE;
+    public static int WIN_SCORE = Integer.MAX_VALUE / 2;
+    public static int LOSE_SCORE = Integer.MIN_VALUE / 2;
     public static int OWN_QUEEN_SURROUND_SCORE = -50; // Per piece surrounding queen?
     public static int OWN_QUEEN_STUCK_SCORE = -300;
     public static int OPPONENT_QUEEN_SURROUND_SCORE = 50;
