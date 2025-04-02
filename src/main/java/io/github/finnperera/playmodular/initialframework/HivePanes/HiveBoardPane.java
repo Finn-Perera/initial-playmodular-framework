@@ -115,6 +115,11 @@ public class HiveBoardPane extends Pane {
         }
     }
 
+    public void updateGame(HiveGame game) {
+        hiveGame = game.getBoardState();
+        renderBoard();
+    }
+
     private void handleMouseClicked(MouseEvent mouseEvent) {
         if (mouseEvent.getButton() == MouseButton.SECONDARY) {
             // on right click i want to deselect any tile

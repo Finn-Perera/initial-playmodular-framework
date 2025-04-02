@@ -12,10 +12,10 @@ public class HiveGame implements Game<Hex, HiveTile> {
 
     private final HiveRuleEngine ruleEngine;
     private final HiveBoardState boardState;
-    private HivePlayer player1;
-    private HivePlayer player2;
+    private final HivePlayer player1;
+    private final HivePlayer player2;
     private int turn;
-    private BasicHeuristic heuristic = new BasicHeuristic(); // change when generalising
+    private final BasicHeuristic heuristic = new BasicHeuristic(); // change when generalising
 
     public HiveGame(HiveRuleEngine ruleEngine, HivePlayer player1, HivePlayer player2, HiveBoardState boardState) {
         this.ruleEngine = ruleEngine;
@@ -211,6 +211,9 @@ public class HiveGame implements Game<Hex, HiveTile> {
     @Override
     public HiveGame handleNoAvailableMoves() {
         this.nextTurn();
+        /*if (getAvailableMoves(getCurrentPlayer()).isEmpty()) {
+            // somehow return terminal? Could send null and just assume null == draw?
+        }*/
         return this;
     }
 

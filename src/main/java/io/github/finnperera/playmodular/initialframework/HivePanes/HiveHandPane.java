@@ -19,7 +19,7 @@ import java.util.Map;
  * Display visualisation of hand, with counts, make clickable
  */
 public class HiveHandPane extends VBox {
-    private HashMap<HiveTileType, Integer> tiles;
+    private final HashMap<HiveTileType, Integer> tiles;
     private final HiveColour colour;
     private HandClickListener clickListener;
 
@@ -33,7 +33,9 @@ public class HiveHandPane extends VBox {
         this.getChildren().clear();
         this.getChildren().add(new Label("Player: " + colour.toString()));
         HBox tilesContainer = new HBox();
-        getHand(player);
+
+        fillTiles(player);
+
         for (Map.Entry<HiveTileType, Integer> entry : tiles.entrySet()) {
             Color color = getPieceColor(entry.getKey());
             Circle circle = new Circle(20);
@@ -73,7 +75,7 @@ public class HiveHandPane extends VBox {
         this.clickListener = clickListener;
     }
 
-    private void getHand(HivePlayer player) {
+    private void fillTiles(HivePlayer player) {
         tiles.clear();
         for (HiveTileType type : HiveTileType.values()) {
             int count = player.getTypeRemainingTiles(type);

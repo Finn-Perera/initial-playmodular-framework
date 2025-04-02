@@ -1,7 +1,7 @@
 package io.github.finnperera.playmodular.initialframework.HivePanes;
 
 import io.github.finnperera.playmodular.initialframework.GameResult;
-import io.github.finnperera.playmodular.initialframework.HiveColour;
+import io.github.finnperera.playmodular.initialframework.HiveBoardGameController;
 import io.github.finnperera.playmodular.initialframework.HiveGame;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
@@ -16,7 +16,7 @@ import java.util.List;
  * - Should be interacted with to play the game
  */
 public class HiveGamePane extends StackPane {
-    private HiveBoardPane board;
+    private final HiveBoardPane board;
     private HBox container;
     private HiveGame game;
     private List<HiveHandPane> handPaneList;
@@ -37,7 +37,7 @@ public class HiveGamePane extends StackPane {
         this.getChildren().clear();
         this.container = new HBox();
         handPaneList = new ArrayList<>();
-        board = new HiveBoardPane(game.getBoardState(), board.getTransformX(), board.getTransformY());
+        board.updateGame(game);
         handPaneList.add(new HiveHandPane(game.getPlayers().getFirst()));
         handPaneList.add(new HiveHandPane(game.getPlayers().getLast()));
         initialiseUI();
@@ -88,5 +88,10 @@ public class HiveGamePane extends StackPane {
 
     public void setGame(HiveGame game) {
         this.game = game;
+    }
+
+    public void setListeners(HiveBoardGameController controller) {
+        board.setClickListener(controller);
+        handPaneList.forEach(handPane -> handPane.setClickListener(controller));
     }
 }

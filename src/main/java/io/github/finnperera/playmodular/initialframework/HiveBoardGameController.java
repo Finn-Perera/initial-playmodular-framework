@@ -17,107 +17,106 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     private final HiveGamePane gamePane;
     private HiveGame game;
     private HiveTile selectedTile;
-    private HiveColour currentPlayerColour;
 
     public HiveBoardGameController(HiveGamePane gamePane, HiveGame game) {
         this.gamePane = gamePane;
         this.game = game;
 
-        currentPlayerColour = game.getCurrentPlayer().getColour();
-
         setListening();
+
+        beginGame();
     }
 
-    @Override
-    public void onTileClicked(Hex clickedHex) {
-        if (clickedHex == null) {
-            selectedTile = null;
-            showValidMovementFromTile(null);
-            return;
-        }
-
-        if (selectedTile == null) {
-            selectTileOnBoard(clickedHex);
-            return;
-        }
-
-        List<HiveMove> possibleMoves = game.getAvailableMoves(game.getCurrentPlayer());
-        if (selectedTile.getHex() == null) { // Effectively checking if placement or not selected
-            HiveTile possibleTile = new HiveTile(selectedTile.getTileType(), clickedHex, selectedTile.getColour());
-            HiveMove possibleMove = new HiveMove(possibleTile, clickedHex, true);
-            if (possibleMoves.contains(possibleMove)) {
-                nextTurn(game.makeMove(possibleMove));
-            } else {
-                selectTileOnBoard(clickedHex);
-            }
-            /*if (game.isValidMove(possibleMove)) {
-                nextTurn(game.makeMove(possibleMove));
-            } else {
-                selectTileOnBoard(clickedHex);
-            }*/
-        } else {
-            // already have a piece on board selected
-            HiveMove possibleMove = new HiveMove(selectedTile, clickedHex, false);
-            if (possibleMoves.contains(possibleMove)) {
-                nextTurn(game.makeMove(possibleMove));
-            } else {
-                selectTileOnBoard(clickedHex);
-            }
-            /*if (game.isValidMove(possibleMove)) {
-                nextTurn(game.makeMove(possibleMove));
-            } else {
-                selectTileOnBoard(clickedHex);
-            }*/
-        }
+    private void beginGame() { // might need to add more initial calls here later?
+        checkGameState();
     }
 
-    private void nextTurn(HiveGame nextTurnOfGame) {
+    private void handleMove(HiveMove move) {
+        game = game.makeMove(move);
 
-        this.game = nextTurnOfGame;
-        currentPlayerColour = game.getCurrentPlayer().getColour();
 
         gamePane.setGame(game);
         gamePane.update();
         setListening();
 
-        // Check for win state
-        if (game.isTerminalState()) {
-            gamePane.showEndGame();
-        } else if (game.getAvailableMoves(game.getCurrentPlayer()).isEmpty()) { // check player can move
-            nextTurnOfGame.nextTurn(); // this feels wrong?
-            nextTurnOfGame = new HiveGame(nextTurnOfGame.getRuleEngine(), nextTurnOfGame.getPlayers().getFirst(), nextTurnOfGame.getPlayers().getLast(), nextTurnOfGame.getBoardState(), nextTurnOfGame.getTurn());
-            if (nextTurnOfGame.getAvailableMoves(nextTurnOfGame.getCurrentPlayer()).isEmpty()) {
-                gamePane.showEndGame(GameResult.DRAW); // draw? impossible to reach?
-            } else {
-                nextTurn(nextTurnOfGame); // shouldn't recur more than once?
-            }
-        }
-
-        if (game.getCurrentPlayer().isAI() && !game.isTerminalState()) {
-            HiveAI aiPlayer = (HiveAI) game.getCurrentPlayer();
-            makeAITurn(aiPlayer);
-        }
-
+        checkGameState();
         selectedTile = null;
     }
 
-    private void makeAITurn(HiveAI player) {
-        List<HiveMove> availableMoves = game.getAvailableMoves(player);
+    private void checkGameState() {
+        if (game.isTerminalState()) {
+            gamePane.showEndGame();
+            return;
+        }
 
+        if (game.getAvailableMoves(game.getCurrentPlayer()).isEmpty()) {
+            handleForcedPass();
+            return;
+        }
+
+        if (game.getCurrentPlayer().isAI()) {
+            makeAITurn((HiveAI) game.getCurrentPlayer());
+        }
+    }
+
+    private void handleForcedPass() {
+        game = game.handleNoAvailableMoves();
+        gamePane.setGame(game);
+        gamePane.update();
+
+        if (game.getAvailableMoves(game.getCurrentPlayer()).isEmpty()) {
+            gamePane.showEndGame();
+        } else {
+            checkGameState();
+        }
+    }
+
+    @Override
+    public void onTileClicked(Hex clickedHex) {
+        if (clickedHex == null) {
+            // clear selected tile
+            selectedTile = null;
+            showValidMovementFromTile(null);
+            return;
+        }
+
+        if (selectedTile == null || game.getCurrentPlayer().isAI()) {
+            // select tile
+            selectTileOnBoard(clickedHex);
+            return;
+        }
+
+        List<HiveMove> possibleMoves = game.getAvailableMoves(game.getCurrentPlayer());
+        HiveMove possibleMove = createMove(clickedHex);
+
+        if (possibleMoves.contains(possibleMove)) {
+            handleMove(possibleMove);
+        } else {
+            selectTileOnBoard(clickedHex);
+        }
+    }
+
+    private HiveMove createMove(Hex clickedHex) {
+        if (selectedTile.getHex() == null) { // check if placement move
+            return new HiveMove(new HiveTile(selectedTile.getTileType(), clickedHex, selectedTile.getColour()),
+                    clickedHex, true);
+        } else {
+            return new HiveMove(selectedTile, clickedHex, false);
+        }
+    }
+
+    private void makeAITurn(HiveAI player) {
         Task<HiveMove> aiTask = new Task<>() {
             @Override
             protected HiveMove call() {
-                return (HiveMove) player.getNextMove(game, availableMoves);
+                return (HiveMove) player.getNextMove(game, game.getAvailableMoves(player));
             }
         };
 
         aiTask.setOnSucceeded(event -> {
             HiveMove aiMove = aiTask.getValue();
             if (aiMove != null) {
-                Platform.runLater(() -> {
-                    game = game.makeMove(aiMove);
-                    nextTurn(game);
-                });
+                Platform.runLater(() -> handleMove(aiMove));
             }
         });
 
@@ -130,7 +129,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
 
     private void selectTileOnBoard(Hex clickedHex) {
         HiveTile tile = game.getBoardState().getPieceAt(clickedHex);
-        if (tile != null && tile.getColour() == currentPlayerColour) {
+        if (tile != null && tile.getColour() == game.getCurrentPlayer().getColour()) {
             selectedTile = tile;
             showValidMovementFromTile(selectedTile);
         }
@@ -141,6 +140,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
             gamePane.getBoard().highlightPossibleMoves(null);
             return;
         }
+
         List<Hex> hexList = new ArrayList<>();
         if (tile.getHex() == null) {
             game.getPlacementMoves(game.getCurrentPlayer()).forEach(move -> {
@@ -167,14 +167,13 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
             return;
         }
 
-        if (currentPlayerColour == colour) {
+        if (game.getCurrentPlayer().getColour() == colour) {
             selectedTile = new HiveTile(tile, null, colour);
             showValidMovementFromTile(selectedTile);
         }
     }
 
     private void setListening() {
-        gamePane.getBoard().setClickListener(this);
-        gamePane.getHandPaneList().forEach(hiveHandPane -> hiveHandPane.setClickListener(this));
+        gamePane.setListeners(this);
     }
 }
