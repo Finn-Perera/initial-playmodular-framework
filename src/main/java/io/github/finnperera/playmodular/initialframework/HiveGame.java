@@ -182,12 +182,7 @@ public class HiveGame implements Game<Hex, HiveTile> {
     public GameResult getGameResult(Player player) {
         if (player == null) throw new IllegalArgumentException("Player cannot be null");
         GameResult result = null;
-        HiveColour colourOfPlayer = null;
-        for (HivePlayer p : getPlayers()) {
-            if (p.equals(player)) {
-                colourOfPlayer = p.getColour();
-            }
-        }
+        HivePlayer hivePlayer = (HivePlayer) player;
 
         for (HiveTile queen : boardState.getQueens()) {
             int hasTile = 0;
@@ -198,22 +193,22 @@ public class HiveGame implements Game<Hex, HiveTile> {
             }
             if (hasTile == 6) {
                 if (result == null) {
-                    result = queen.getColour() == colourOfPlayer ? GameResult.LOSS : GameResult.WIN;
+                    result = queen.getColour() == hivePlayer.getColour() ? GameResult.LOSS : GameResult.WIN;
                 } else {
                     result = GameResult.DRAW;
                 }
             }
         }
-
         return result;
     }
 
     @Override
     public HiveGame handleNoAvailableMoves() {
         this.nextTurn();
-        /*if (getAvailableMoves(getCurrentPlayer()).isEmpty()) {
+        if (getAvailableMoves(getCurrentPlayer()).isEmpty()) {
             // somehow return terminal? Could send null and just assume null == draw?
-        }*/
+            return null;
+        }
         return this;
     }
 
