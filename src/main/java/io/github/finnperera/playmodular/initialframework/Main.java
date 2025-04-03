@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import javafx.scene.control.Button;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 /*
     What I need here:
@@ -25,7 +26,8 @@ import java.util.concurrent.CompletableFuture;
      */
 public class Main extends Application {
 
-    HiveAI selectedAI = null;
+    AtomicReference<HivePlayer> player1Selection = new AtomicReference<>(null);
+    AtomicReference<HivePlayer> player2Selection = new AtomicReference<>(null);
 
     @Override
     public void start(Stage stage) {
@@ -35,7 +37,8 @@ public class Main extends Application {
         stage.setScene(scene);
 
         initialiseGameStateButton(root, scene, stage);
-        createOpponentChoiceBox(root);
+        createPlayerChoiceBox(root, player1Selection, HiveColour.WHITE);
+        createPlayerChoiceBox(root, player2Selection, HiveColour.BLACK);
         createGameButton(stage, root);
         stage.show();
     }
@@ -72,25 +75,32 @@ public class Main extends Application {
         return future;
     }
 
-    private void createOpponentChoiceBox(Pane root) {
+    private void createPlayerChoiceBox(Pane root, AtomicReference<HivePlayer> player, HiveColour colour) {
         ChoiceBox<String> opponentChoiceBox = new ChoiceBox<>();
         opponentChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax", "Alpha-Beta");
         opponentChoiceBox.setValue("Human");
+
         opponentChoiceBox.setOnAction(event -> {
+            String selectedAI = opponentChoiceBox.getValue();
+            HiveAI updatedPlayer = null;
+
             switch (opponentChoiceBox.getValue()) {
-                case "Monte Carlo" -> selectedAI = new HiveAI(HiveColour.BLACK,
+                case "Monte Carlo" -> updatedPlayer = new HiveAI(colour,
                         new MonteCarloModel<>(50));
                 case "Minimax" -> {
-                    selectedAI = new HiveAI(HiveColour.BLACK, null);
-                    selectedAI.setModel(new MinimaxModel<>(selectedAI, new BasicHeuristic()));
+                    updatedPlayer = new HiveAI(colour, null);
+                    updatedPlayer.setModel(new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
                 }
                 case "Alpha-Beta" -> {
-                    selectedAI = new HiveAI(HiveColour.BLACK, null);
-                    selectedAI.setModel(new AlphaBetaMinimaxModel<>(selectedAI, new BasicHeuristic()));
+                    updatedPlayer = new HiveAI(colour, null);
+                    updatedPlayer.setModel(new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
                 }
-                case null, default -> selectedAI = null;
+                case null, default -> updatedPlayer = null;
             }
+
+            player.set(updatedPlayer);
         });
+
         root.getChildren().add(opponentChoiceBox);
     }
 
@@ -99,11 +109,9 @@ public class Main extends Application {
         Button createGameButton = new Button("Create Game");
         createGameButton.setOnAction(event -> {
             HiveGame game;
-            if (selectedAI == null) {
-                game = new HiveGame(new HiveRuleEngine(), new HivePlayer(HiveColour.WHITE), new HivePlayer(HiveColour.BLACK), new HiveBoardState());
-            } else {
-                game = new HiveGame(new HiveRuleEngine(), new HivePlayer(HiveColour.WHITE), selectedAI, new HiveBoardState());
-            }
+            HivePlayer player1 = player1Selection.get() == null ? new HivePlayer(HiveColour.WHITE) : player1Selection.get();
+            HivePlayer player2 = player2Selection.get() == null ? new HivePlayer(HiveColour.BLACK) : player2Selection.get();
+            game = new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
             onGameButtonClicked(stage, game);
         });
         root.getChildren().add(createGameButton);

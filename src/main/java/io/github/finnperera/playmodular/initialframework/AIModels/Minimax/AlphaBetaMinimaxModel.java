@@ -12,7 +12,7 @@ import java.util.concurrent.Future;
 public class AlphaBetaMinimaxModel<P, T> implements AI<P, T> {
 
     private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors() - 1;
-    private static final int MAX_DEPTH = 3;
+    private static final int MAX_DEPTH = 2;
 
     private final Player maxPlayer;
     private final Heuristic<P, T> heuristic;
@@ -65,7 +65,12 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T> {
 
         List<? extends Move<P, T>> moves = gameState.getAvailableMoves(gameState.getCurrentPlayer());
         if (moves.isEmpty()) {
-            return minimax(gameState.handleNoAvailableMoves(), depth - 1, alpha, beta, !maxPlayer);
+            Game<P, T> noMovesOutcome = gameState.handleNoAvailableMoves();
+            if (noMovesOutcome != null) { // temp fix
+                return minimax(noMovesOutcome, depth - 1, alpha, beta, !maxPlayer);
+            } else {
+                return heuristic.getEvaluation(gameState, this.maxPlayer);
+            }
         }
 
         int bestVal = maxPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;

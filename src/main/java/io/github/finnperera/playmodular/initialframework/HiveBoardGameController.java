@@ -2,8 +2,10 @@ package io.github.finnperera.playmodular.initialframework;
 
 import io.github.finnperera.playmodular.initialframework.HivePanes.HiveGamePane;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +57,11 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         }
 
         if (game.getCurrentPlayer().isAI()) {
-            makeAITurn((HiveAI) game.getCurrentPlayer());
+            PauseTransition pause = new PauseTransition(Duration.millis(500));
+            pause.setOnFinished(event -> {
+                makeAITurn((HiveAI) game.getCurrentPlayer());
+            });
+            pause.play();
         }
     }
 
