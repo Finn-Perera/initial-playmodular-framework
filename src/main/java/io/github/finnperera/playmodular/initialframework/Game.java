@@ -3,23 +3,21 @@ package io.github.finnperera.playmodular.initialframework;
 import java.util.List;
 
 public interface Game<P, T> { // P : Position, T : Tile/Piece
-    public List<? extends Move<P, T>> getAvailableMoves(Player player);
+    List<? extends Move<P, T>> getAvailableMoves(Player player);
 
-    public Game<P, T> makeMove(Move<P, T> move);
-    
-    public int evaluateBoardState(BoardState<P, T> boardState); // must discern player?
+    Game<P, T> makeMove(Move<P, T> move);
 
-    public Game<P, T> handleNoAvailableMoves();
+    int evaluateBoardState(BoardState<P, T> boardState); // must discern player?
 
-    public List<Option> getPossibleOptions();
+    Game<P, T> handleNoAvailableMoves();
 
-    public boolean isValidMove(Move<P, T> move);
+    boolean isValidMove(Move<P, T> move);
 
-    public boolean isTerminalState();
+    boolean isTerminalState();
 
-    public Player getCurrentPlayer();
+    Player getCurrentPlayer();
 
-    public Player getCurrentOpponent();
+    Player getCurrentOpponent();
 
     public GameResult getGameResult(Player player);
 }

@@ -4,10 +4,7 @@ import io.github.finnperera.playmodular.initialframework.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 
 /*
     Two ways to do MCTS:
@@ -18,12 +15,22 @@ import java.util.concurrent.ThreadLocalRandom;
     2. Highest win rate (highest quality)
     3. Custom heuristic / mix of previous ways
  */
-public class MonteCarloModel<P, T> implements AI<P, T> {
+public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
 
-    public static final double EXPLORATION_CONSTANT = 1.27; // Constant factor for UCB (sqrt(2) is a common val)
-    public static final int MAX_MOVES = 150;
-    private final int iterations;
+    private static final String OPT_MAX_MOVES = "Maximum Moves";
+    private static final String OPT_ITERATIONS = "Iterations";
+    private static final String OPT_EXPLO_CONST = "Exploration Constant";
+
+    private static final String DESC_MAX_MOVES = "Number of moves simulated before becoming a draw";
+    private static final String DESC_EXPLORATION_CONSTANT =
+            "Factor for exploration (high) or exploitation (low) on nodes, typically at sqrt(2)";
+    private static final String DESC_ITERATIONS = "Number of game simulations run for each move";
+
     private MCTSNode<P, T> rootNode;
+    // Could make these final and have a default value in the options but not set until set options called?
+    public double explorationConstant = 1.27; // Constant factor for UCB (sqrt(2) is a common val)
+    private int iterations;
+    public int maxMoves = 150;
 
     public MonteCarloModel(int iterations) {
         this.iterations = iterations;
@@ -37,28 +44,34 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
         rootNode = new MCTSNode<>(game, null, moves, null); // set root as current game state
 
         int numThreads = Runtime.getRuntime().availableProcessors();
-        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
-        List<Future<?>> futures = new ArrayList<>(numThreads);
+        try (ExecutorService executor = Executors.newFixedThreadPool(numThreads)) {
+            List<Future<?>> futures = new ArrayList<>(numThreads);
 
-        for (int i = 0; i < iterations; i++) {
-            futures.add(executor.submit(() -> {
-                MCTSNode<P, T> selectedNode = select();
-                MCTSNode<P, T> expandedNode = expand(selectedNode);
-                MCTSNode<P, T> selectedExpansion = getBestChild(expandedNode);
-                Game<P, T> finalState = simulate(selectedExpansion);
-                backpropagation(finalState, selectedExpansion);
-            }));
-        }
+            for (int i = 0; i < iterations; i++) {
+                futures.add(executor.submit(() -> {
+                    try {
+                        MCTSNode<P, T> selectedNode = select();
+                        MCTSNode<P, T> expandedNode = expand(selectedNode);
+                        MCTSNode<P, T> selectedExpansion = getBestChild(expandedNode);
+                        Game<P, T> finalState = simulate(selectedExpansion);
+                        backpropagation(finalState, selectedExpansion);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }));
+            }
 
-        for (Future<?> future : futures) {
-            try {
-                future.get();
-            } catch (Exception e) {
-                e.printStackTrace();
+            for (Future<?> future : futures) {
+                try {
+                    future.get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Thread was interrupted: " + e.getMessage());
+                } catch (ExecutionException e) {
+                    e.getCause().printStackTrace();
+                }
             }
         }
-
-        executor.shutdown();
         return getBestMove();
     }
 
@@ -107,7 +120,7 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
         System.out.println("Simulate Stage");
         Game<P, T> game = node.getGameState();
         int depth = 0;
-        while (!game.isTerminalState() && depth < MAX_MOVES) {
+        while (!game.isTerminalState() && depth < maxMoves) {
             List<? extends Move<P, T>> availableMoves = game.getAvailableMoves(game.getCurrentPlayer());
 
             if (availableMoves.isEmpty()) {
@@ -191,6 +204,34 @@ public class MonteCarloModel<P, T> implements AI<P, T> {
         double v = node.getTotalValue() / node.getVisits();
         double explorationTerm = Math.sqrt(Math.log(node.getParent().getVisits()) / node.getVisits());
 
-        return v + EXPLORATION_CONSTANT * explorationTerm;
+        return v + explorationConstant * explorationTerm;
+    }
+
+    @Override
+    public List<Option<?>> getOptions() {
+        return List.of(
+                new Option<>(OPT_MAX_MOVES, DESC_MAX_MOVES, OptionType.SPINNER, Integer.class, 300, 10, 1000),
+                new Option<>(OPT_EXPLO_CONST, DESC_EXPLORATION_CONSTANT, OptionType.SPINNER, Double.class, 1.27, 0.1, 10.0),
+                new Option<>(OPT_ITERATIONS, DESC_ITERATIONS, OptionType.SPINNER, Integer.class, 1500, 1, 10000)
+        );
+    }
+
+    @Override
+    public void setOptions(List<Option<?>> options) {
+        for (Option<?> option : options) {
+            switch (option.getName()) {
+                case OPT_MAX_MOVES:
+                    maxMoves = (Integer) option.getValue();
+                    break;
+                case OPT_EXPLO_CONST:
+                    explorationConstant = (Double) option.getValue();
+                    break;
+                case OPT_ITERATIONS:
+                    iterations = (Integer) option.getValue();
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown option: " + option.getName());
+            }
+        }
     }
 }

@@ -8,13 +8,17 @@ import io.github.finnperera.playmodular.initialframework.HivePanes.HiveGamePane;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import javafx.application.Application;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.Button;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -28,6 +32,8 @@ public class Main extends Application {
 
     AtomicReference<HivePlayer> player1Selection = new AtomicReference<>(null);
     AtomicReference<HivePlayer> player2Selection = new AtomicReference<>(null);
+    List<Option<?>> player1Options = new ArrayList<>();
+    List<Option<?>> player2Options = new ArrayList<>();
 
     @Override
     public void start(Stage stage) {
@@ -80,37 +86,65 @@ public class Main extends Application {
         opponentChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax", "Alpha-Beta");
         opponentChoiceBox.setValue("Human");
 
-        opponentChoiceBox.setOnAction(event -> {
-            String selectedAI = opponentChoiceBox.getValue();
-            HiveAI updatedPlayer = null;
+        VBox optionContainer = new VBox();
+        optionContainer.setId(colour.name() + " options");
 
-            switch (opponentChoiceBox.getValue()) {
-                case "Monte Carlo" -> updatedPlayer = new HiveAI(colour,
-                        new MonteCarloModel<>(50));
-                case "Minimax" -> {
-                    updatedPlayer = new HiveAI(colour, null);
-                    updatedPlayer.setModel(new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
-                }
-                case "Alpha-Beta" -> {
-                    updatedPlayer = new HiveAI(colour, null);
-                    updatedPlayer.setModel(new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
-                }
-                case null, default -> updatedPlayer = null;
-            }
+        opponentChoiceBox.setOnAction(event -> {
+            optionContainer.getChildren().clear();
+
+            HiveAI updatedPlayer = getHiveAI(colour, opponentChoiceBox);
 
             player.set(updatedPlayer);
+
+            if (updatedPlayer != null && updatedPlayer.getModel() instanceof ConfigurableOptions configurableOptions) {
+                List<Option<?>> options = configurableOptions.getOptions();
+                if (colour == HiveColour.WHITE) {
+                    player1Options = options;
+                } else {
+                    player2Options = options;
+                }
+                List<Node> aiOptions = createAIOptions(options); // creates a list of nodes that contain vbox of labels and control nodes
+                for (Node aiOption : aiOptions) { // for each of these nodes add them to the container
+                    optionContainer.getChildren().add(aiOption);
+                }
+            }
         });
 
-        root.getChildren().add(opponentChoiceBox);
+        VBox playerChoiceContainer = new VBox(opponentChoiceBox, optionContainer);
+        root.getChildren().add(playerChoiceContainer);
     }
 
+    private static HiveAI getHiveAI(HiveColour colour, ChoiceBox<String> opponentChoiceBox) {
+        HiveAI updatedPlayer = null;
+
+        switch (opponentChoiceBox.getValue()) {
+            case "Monte Carlo" -> updatedPlayer = new HiveAI(colour,
+                    new MonteCarloModel<>(50));
+            case "Minimax" -> {
+                updatedPlayer = new HiveAI(colour, null);
+                updatedPlayer.setModel(new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
+            }
+            case "Alpha-Beta" -> {
+                updatedPlayer = new HiveAI(colour, null);
+                updatedPlayer.setModel(new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
+            }
+        }
+        return updatedPlayer;
+    }
 
     private void createGameButton(Stage stage, Pane root) {
         Button createGameButton = new Button("Create Game");
         createGameButton.setOnAction(event -> {
             HiveGame game;
-            HivePlayer player1 = player1Selection.get() == null ? new HivePlayer(HiveColour.WHITE) : player1Selection.get();
-            HivePlayer player2 = player2Selection.get() == null ? new HivePlayer(HiveColour.BLACK) : player2Selection.get();
+            HivePlayer player1 = player1Selection.get(); // == null ? new HivePlayer(HiveColour.WHITE) : player1Selection.get();
+            HivePlayer player2 = player2Selection.get(); // == null ? new HivePlayer(HiveColour.BLACK) : player2Selection.get();
+
+            updatePlayerOptions(player1, player1Options);
+            updatePlayerOptions(player2, player2Options);
+
+            if (player1 == null) player1 = new HivePlayer(HiveColour.WHITE);
+            if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
+
             game = new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
             onGameButtonClicked(stage, game);
         });
@@ -124,5 +158,22 @@ public class Main extends Application {
         HiveBoardGameController controller = new HiveBoardGameController(gamePane, game);
         Scene gameScene = new Scene(gamePane, 1280, 640);
         stage.setScene(gameScene);
+    }
+
+    private List<Node> createAIOptions(List<Option<?>> options) {
+        List<Node> optionNodes = new ArrayList<>();
+        for (Option<?> option : options) {
+            Node optionControl = OptionFactory.createOptionControl(option);
+            optionNodes.add(optionControl);
+        }
+        return optionNodes;
+    }
+
+    private void updatePlayerOptions(HivePlayer player, List<Option<?>> options) { // given a player
+        if (player instanceof HiveAI hiveAI) { // if the player is a hiveAI
+            if (hiveAI.getModel() instanceof ConfigurableOptions configurablePlayer) { // does the hive ai have options
+                configurablePlayer.setOptions(options); // set these options, which feels redundant?
+            }
+        }
     }
 }
