@@ -55,6 +55,7 @@ public class OptionFactory {
         double value = toDouble(option.getValue());
 
         Spinner<Double> spinner = new Spinner<>(min ,max, value);
+        spinner.setEditable(true);
 
         spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
             T newValue = fromDouble(option.getValueType(), newVal);
