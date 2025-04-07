@@ -7,7 +7,9 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.util.Duration;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -19,6 +21,8 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     private final HiveGamePane gamePane;
     private HiveGame game;
     private HiveTile selectedTile;
+    private List<GameResultListener> gameResultListeners = new ArrayList<>();
+    private Instant startTime;
 
     public HiveBoardGameController(HiveGamePane gamePane, HiveGame game) {
         this.gamePane = gamePane;
@@ -30,6 +34,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     }
 
     private void beginGame() { // might need to add more initial calls here later?
+        startTime = Instant.now();
         checkGameState();
     }
 
@@ -48,6 +53,9 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     private void checkGameState() {
         if (game.isTerminalState()) {
             gamePane.showEndGame();
+
+            GameLog gameLog = generateGameLog();
+            gameResultListeners.forEach(gameResultListener -> gameResultListener.onGameResult(gameLog));
             return;
         }
 
@@ -179,7 +187,22 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         }
     }
 
+    private GameLog generateGameLog() {
+        Instant endTime = Instant.now();
+        HashMap<Player, GameResult> gameResultMap = new HashMap<>();
+
+        for (Player player : game.getPlayers()) {
+            gameResultMap.put(player, game.getGameResult(player));
+        }
+
+        return new GameLog(startTime, endTime, gameResultMap, game.getTurn());
+    }
+
     private void setListening() {
         gamePane.setListeners(this);
+    }
+
+    public void addGameResultListener(GameResultListener gameResultListener) {
+        gameResultListeners.add(gameResultListener);
     }
 }

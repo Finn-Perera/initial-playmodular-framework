@@ -238,7 +238,8 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
         turn += 1;
     }
 
-    public List<HivePlayer> getPlayers() {
+    @Override
+    public List<Player> getPlayers() {
         return List.of(player1, player2);
     }
 

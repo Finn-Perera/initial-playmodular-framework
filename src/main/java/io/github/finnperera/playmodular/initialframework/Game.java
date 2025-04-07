@@ -15,9 +15,11 @@ public interface Game<P, T> { // P : Position, T : Tile/Piece
 
     boolean isTerminalState();
 
+    List<Player> getPlayers();
+
     Player getCurrentPlayer();
 
     Player getCurrentOpponent();
 
-    public GameResult getGameResult(Player player);
+    GameResult getGameResult(Player player);
 }

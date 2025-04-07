@@ -10,6 +10,7 @@ import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import javafx.application.Application;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -28,12 +29,14 @@ import java.util.concurrent.atomic.AtomicReference;
     - I need a game instance to be created
     - A visualiser should create a pane which represents the game board
      */
-public class Main extends Application {
-
+public class Main extends Application implements GameResultListener {
     AtomicReference<HivePlayer> player1Selection = new AtomicReference<>(null);
     AtomicReference<HivePlayer> player2Selection = new AtomicReference<>(null);
     List<Option<?>> player1Options = new ArrayList<>();
     List<Option<?>> player2Options = new ArrayList<>();
+
+    LoggingManager loggingManager = new LoggingManager();
+    String filePrefix; // this limits the main/client to only run one set of simulations at a time
 
     @Override
     public void start(Stage stage) {
@@ -59,7 +62,7 @@ public class Main extends Application {
                             /*HiveBoard game = new HiveBoard(hiveGame);
                             Scene gameScene = new Scene(game, 1280, 640);
                             stage.setScene(gameScene);*/
-                            onGameButtonClicked(stage, hiveGame);
+                            onGameButtonClicked(stage, hiveGame, false);
                         })
                         .exceptionally(ex -> {
                             System.out.println("Something went wrong: " + ex.getMessage());
@@ -134,6 +137,7 @@ public class Main extends Application {
 
     private void createGameButton(Stage stage, Pane root) {
         Button createGameButton = new Button("Create Game");
+        CheckBox loggingCheckBox = new CheckBox("Generate Log");
         createGameButton.setOnAction(event -> {
             HiveGame game;
             HivePlayer player1 = player1Selection.get(); // == null ? new HivePlayer(HiveColour.WHITE) : player1Selection.get();
@@ -146,16 +150,25 @@ public class Main extends Application {
             if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
 
             game = new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
-            onGameButtonClicked(stage, game);
+
+            onGameButtonClicked(stage, game, loggingCheckBox.isSelected());
         });
         root.getChildren().add(createGameButton);
+        root.getChildren().add(loggingCheckBox);
     }
 
-    private void onGameButtonClicked(Stage stage, HiveGame hiveGame) {
-        HiveGame game;
-        game = hiveGame;
-        HiveGamePane gamePane = new HiveGamePane(game);
-        HiveBoardGameController controller = new HiveBoardGameController(gamePane, game);
+    private void enableLogging(HiveGame game, HiveBoardGameController controller) {
+        controller.addGameResultListener(this);
+        filePrefix = loggingManager.setupGameLog(game);
+    }
+
+    private void onGameButtonClicked(Stage stage, HiveGame hiveGame, boolean loggingEnabled) {
+
+        HiveGamePane gamePane = new HiveGamePane(hiveGame);
+        HiveBoardGameController controller = new HiveBoardGameController(gamePane, hiveGame);
+
+        if (loggingEnabled) enableLogging(hiveGame, controller);
+
         Scene gameScene = new Scene(gamePane, 1280, 640);
         stage.setScene(gameScene);
     }
@@ -175,5 +188,10 @@ public class Main extends Application {
                 configurablePlayer.setOptions(options); // set these options, which feels redundant?
             }
         }
+    }
+
+    @Override
+    public void onGameResult(GameLog log) {
+        loggingManager.addResultToFiles(filePrefix, log);
     }
 }

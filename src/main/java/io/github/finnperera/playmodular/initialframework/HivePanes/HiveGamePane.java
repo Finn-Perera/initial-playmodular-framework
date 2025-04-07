@@ -3,6 +3,7 @@ package io.github.finnperera.playmodular.initialframework.HivePanes;
 import io.github.finnperera.playmodular.initialframework.GameResult;
 import io.github.finnperera.playmodular.initialframework.HiveBoardGameController;
 import io.github.finnperera.playmodular.initialframework.HiveGame;
+import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 
@@ -26,8 +27,8 @@ public class HiveGamePane extends StackPane {
         this.container = new HBox();
         this.game = game;
         handPaneList = new ArrayList<>();
-        handPaneList.add(new HiveHandPane(game.getPlayers().getFirst()));
-        handPaneList.add(new HiveHandPane(game.getPlayers().getLast()));
+        handPaneList.add(new HiveHandPane((HivePlayer) game.getPlayers().getFirst()));
+        handPaneList.add(new HiveHandPane((HivePlayer) game.getPlayers().getLast()));
         board = new HiveBoardPane(game.getBoardState());
         this.setPrefSize(1280, 1024);
         initialiseUI();
@@ -38,8 +39,8 @@ public class HiveGamePane extends StackPane {
         this.container = new HBox();
         handPaneList = new ArrayList<>();
         board.updateGame(game);
-        handPaneList.add(new HiveHandPane(game.getPlayers().getFirst()));
-        handPaneList.add(new HiveHandPane(game.getPlayers().getLast()));
+        handPaneList.add(new HiveHandPane((HivePlayer) game.getPlayers().getFirst()));
+        handPaneList.add(new HiveHandPane((HivePlayer) game.getPlayers().getLast()));
         initialiseUI();
     }
 

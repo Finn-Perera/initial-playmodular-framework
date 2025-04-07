@@ -1,6 +1,7 @@
 module io.github.finnperera.playmodular.initialframework {
     requires javafx.controls;
     requires javafx.fxml;
+    requires com.opencsv;
 
 
     opens io.github.finnperera.playmodular.initialframework to javafx.fxml;
