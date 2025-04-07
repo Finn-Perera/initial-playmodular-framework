@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class HiveGame implements Game<Hex, HiveTile> {
+public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
 
     private final HiveRuleEngine ruleEngine;
     private final HiveBoardState boardState;
@@ -126,11 +126,6 @@ public class HiveGame implements Game<Hex, HiveTile> {
         return heuristic.getEvaluation(this);
     }
 
-    @Override
-    public List<Option> getPossibleOptions() {
-        return List.of();
-    }
-
     // could optimise greatly
     @Override
     public boolean isValidMove(Move<Hex, HiveTile> move) {
@@ -211,6 +206,15 @@ public class HiveGame implements Game<Hex, HiveTile> {
         }
         return this;
     }
+
+    @Override
+    public List<Option<?>> getOptions() {
+        return List.of();
+    }
+
+    @Override
+    public void setOptions(List<Option<?>> options) {}
+
 
     public HiveBoardState getBoardState() {
         return boardState;
