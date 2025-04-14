@@ -67,7 +67,7 @@ public class GameLog {
         list.add(duration);
         list.add(String.valueOf(totalTurns));
         for (Player player : playerResults.keySet()) {
-            list.add(player.getClass().getSimpleName());
+            list.add(player.getPlayerID());
             list.add(playerResults.get(player).toString()); // could put it as a number?
         }
 

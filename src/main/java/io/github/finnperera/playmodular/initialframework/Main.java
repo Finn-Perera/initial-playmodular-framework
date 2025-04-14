@@ -20,6 +20,7 @@ import javafx.scene.control.Button;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -85,44 +86,61 @@ public class Main extends Application implements GameResultListener {
     }
 
     private void createPlayerChoiceBox(Pane root, AtomicReference<HivePlayer> player, HiveColour colour) {
-        ChoiceBox<String> opponentChoiceBox = new ChoiceBox<>();
-        opponentChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax", "Alpha-Beta");
-        opponentChoiceBox.setValue("Human");
+        ChoiceBox<String> playerChoiceBox = new ChoiceBox<>();
+        playerChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax", "Alpha-Beta");
+        playerChoiceBox.setValue("Human");
 
         VBox optionContainer = new VBox();
         optionContainer.setId(colour.name() + " options");
 
-        opponentChoiceBox.setOnAction(event -> {
+        playerChoiceBox.setOnAction(event -> {
             optionContainer.getChildren().clear();
 
-            HiveAI updatedPlayer = getHiveAI(colour, opponentChoiceBox);
+            HiveAI updatedPlayer = getHiveAI(colour, playerChoiceBox);
+
+            Option<?> playerID = updatedPlayer.getOptions().getFirst();
+
+            if (colour == HiveColour.WHITE) {
+                player1Options.clear();
+                player1Options.add(playerID);
+            } else {
+                player2Options.clear();
+                player2Options.add(playerID);
+            }
 
             player.set(updatedPlayer);
+            Node playerIDNode = OptionFactory.createOptionControl(playerID);
+
+            if (updatedPlayer != null) {
+                optionContainer.getChildren().add(playerIDNode);
+            }
 
             if (updatedPlayer != null && updatedPlayer.getModel() instanceof ConfigurableOptions configurableOptions) {
                 List<Option<?>> options = configurableOptions.getOptions();
                 if (colour == HiveColour.WHITE) {
-                    player1Options = options;
+                    player1Options.addAll(options);
                 } else {
-                    player2Options = options;
+                    player2Options.addAll(options);
                 }
                 List<Node> aiOptions = createAIOptions(options); // creates a list of nodes that contain vbox of labels and control nodes
                 for (Node aiOption : aiOptions) { // for each of these nodes add them to the container
                     optionContainer.getChildren().add(aiOption);
                 }
             }
+
+
         });
 
-        VBox playerChoiceContainer = new VBox(opponentChoiceBox, optionContainer);
+        VBox playerChoiceContainer = new VBox(playerChoiceBox, optionContainer);
         root.getChildren().add(playerChoiceContainer);
     }
 
-    private static HiveAI getHiveAI(HiveColour colour, ChoiceBox<String> opponentChoiceBox) {
+    private static HiveAI getHiveAI(HiveColour colour, ChoiceBox<String> playerChoiceBox) {
         HiveAI updatedPlayer = null;
 
-        switch (opponentChoiceBox.getValue()) {
+        switch (playerChoiceBox.getValue()) {
             case "Monte Carlo" -> updatedPlayer = new HiveAI(colour,
-                    new MonteCarloModel<>(50));
+                    new MonteCarloModel<>());
             case "Minimax" -> {
                 updatedPlayer = new HiveAI(colour, null);
                 updatedPlayer.setModel(new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
@@ -140,8 +158,8 @@ public class Main extends Application implements GameResultListener {
         CheckBox loggingCheckBox = new CheckBox("Generate Log");
         createGameButton.setOnAction(event -> {
             HiveGame game;
-            HivePlayer player1 = player1Selection.get(); // == null ? new HivePlayer(HiveColour.WHITE) : player1Selection.get();
-            HivePlayer player2 = player2Selection.get(); // == null ? new HivePlayer(HiveColour.BLACK) : player2Selection.get();
+            HivePlayer player1 = player1Selection.get();
+            HivePlayer player2 = player2Selection.get();
 
             updatePlayerOptions(player1, player1Options);
             updatePlayerOptions(player2, player2Options);
@@ -183,6 +201,20 @@ public class Main extends Application implements GameResultListener {
     }
 
     private void updatePlayerOptions(HivePlayer player, List<Option<?>> options) { // given a player
+        Option<?> playerIDOption = null;
+
+        for (Option<?> option : options) {
+            if ("Player ID".equals(option.getName())) {
+                playerIDOption = option;
+            }
+        }
+
+        if (playerIDOption != null) {
+            player.setOptions(List.of(playerIDOption));
+            options.remove(playerIDOption);
+        }
+
+
         if (player instanceof HiveAI hiveAI) { // if the player is a hiveAI
             if (hiveAI.getModel() instanceof ConfigurableOptions configurablePlayer) { // does the hive ai have options
                 configurablePlayer.setOptions(options); // set these options, which feels redundant?

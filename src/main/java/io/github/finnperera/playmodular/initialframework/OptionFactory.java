@@ -15,6 +15,7 @@ public class OptionFactory {
             case SPINNER -> createSpinner(option);
             case TOGGLE -> createCheckbox(option);
             case DROPDOWN -> createDropdown(option);
+            case TEXTBOX -> createTextBox(option);
             case null -> throw new IllegalArgumentException("Unsupported option type: " + option.getType());
         };
 
@@ -91,6 +92,21 @@ public class OptionFactory {
         tooltip.setShowDelay(Duration.seconds(0.25));
         Tooltip.install(label, tooltip);
         return label;
+    }
+
+    private static <T> TextField createTextBox(Option<T> option) {
+        if (!String.class.isAssignableFrom(option.getValueType())) {
+            throw new IllegalArgumentException("Textbox requires String type");
+        }
+
+        TextField textField = new TextField();
+        textField.setPromptText(option.getName());
+
+        textField.textProperty().addListener((obs, oldVal, newVal) -> {
+            option.setValue(option.getValueType().cast(newVal));
+        });
+
+        return textField;
     }
 
     private static double toDouble(Object num) {

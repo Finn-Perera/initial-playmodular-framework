@@ -4,5 +4,6 @@ public enum OptionType {
     TOGGLE,
     SLIDER,
     SPINNER,
-    DROPDOWN
+    DROPDOWN,
+    TEXTBOX
 }

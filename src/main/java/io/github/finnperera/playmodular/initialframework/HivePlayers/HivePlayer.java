@@ -1,26 +1,28 @@
 package io.github.finnperera.playmodular.initialframework.HivePlayers;
 
-import io.github.finnperera.playmodular.initialframework.HiveColour;
-import io.github.finnperera.playmodular.initialframework.HiveTileType;
-import io.github.finnperera.playmodular.initialframework.Player;
+import io.github.finnperera.playmodular.initialframework.*;
 
 import java.util.HashMap;
+import java.util.List;
 
-public class HivePlayer implements Player {
+public class HivePlayer implements Player, ConfigurableOptions {
 
-    private HashMap<HiveTileType, Integer> tiles;
     private final HiveColour colour;
+    private String playerID = getClass().getSimpleName();
+    private HashMap<HiveTileType, Integer> tiles;
 
     public HivePlayer(HiveColour colour) {
         tiles = new HashMap<>();
         createHand();
 
         this.colour = colour;
+        playerID = getClass().getSimpleName();
     }
 
-    public HivePlayer(HashMap<HiveTileType, Integer> tiles, HiveColour colour) {
+    public HivePlayer(HashMap<HiveTileType, Integer> tiles, HiveColour colour, String playerID) {
         this.tiles = new HashMap<>(tiles);
         this.colour = colour;
+        this.playerID = playerID;
     }
 
     private void createHand() {
@@ -55,7 +57,30 @@ public class HivePlayer implements Player {
     }
 
     @Override
+    public String getPlayerID() {
+        return playerID;
+    }
+
+    @Override
     public boolean isAI() {
         return false;
+    }
+
+    @Override
+    public List<Option<?>> getOptions() {
+        return List.of(
+                new Option<>("Player ID", "Identifier for Player", OptionType.TEXTBOX, String.class, getClass().getSimpleName(), null, null)
+        );
+    }
+
+    @Override
+    public void setOptions(List<Option<?>> options) {
+        for (Option<?> option : options) {
+            if (option.getName().equals("Player ID")) {
+                playerID = (String) option.getValue();
+            } else {
+                throw new IllegalArgumentException("Unknown option: " + option.getName());
+            }
+        }
     }
 }

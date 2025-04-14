@@ -98,9 +98,9 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
             HiveColour currentPlayerCol = getCurrentPlayer().getColour();
             Player player = getCurrentPlayer();
             if (player instanceof HiveAI ai) {
-                player = new HiveAI(ai.removeTile(move.getPieceToMove().getTileType()), ai.getColour(), ai.getModel());
+                player = new HiveAI(ai.removeTile(move.getPieceToMove().getTileType()), ai.getColour(), ai.getModel(), player.getPlayerID());
             } else {
-                player = new HivePlayer(((HivePlayer) player).removeTile(move.getPieceToMove().getTileType()), currentPlayerCol);
+                player = new HivePlayer(((HivePlayer) player).removeTile(move.getPieceToMove().getTileType()), currentPlayerCol, player.getPlayerID());
             }
 
             HiveBoardState newBoardState = new HiveBoardState(boardState);

@@ -29,12 +29,10 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
     private MCTSNode<P, T> rootNode;
     // Could make these final and have a default value in the options but not set until set options called?
     public double explorationConstant = 1.27; // Constant factor for UCB (sqrt(2) is a common val)
-    private int iterations;
+    private int iterations = 500;
     public int maxMoves = 150;
 
-    public MonteCarloModel(int iterations) {
-        this.iterations = iterations;
-    }
+    public MonteCarloModel() {}
 
     /*
     need to prune before doing most of this?

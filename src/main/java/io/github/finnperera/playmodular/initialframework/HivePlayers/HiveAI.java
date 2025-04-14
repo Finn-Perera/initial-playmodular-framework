@@ -17,8 +17,8 @@ public class HiveAI extends HivePlayer {
         this.model = model;
     }
 
-    public HiveAI(HashMap<HiveTileType, Integer> tiles, HiveColour colour, AI<Hex, HiveTile> model) {
-        super(tiles, colour);
+    public HiveAI(HashMap<HiveTileType, Integer> tiles, HiveColour colour, AI<Hex, HiveTile> model, String playerID) {
+        super(tiles, colour, playerID);
         this.model = model;
     }
 
