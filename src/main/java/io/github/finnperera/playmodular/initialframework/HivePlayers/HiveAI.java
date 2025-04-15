@@ -35,6 +35,12 @@ public class HiveAI extends HivePlayer {
     }
 
     @Override
+    public HiveAI copy() {
+        AI<Hex, HiveTile> modelCopy = model.copy(this);
+        return new HiveAI(getTiles(), getColour(), modelCopy, getPlayerID());
+    }
+
+    @Override
     public boolean isAI() {
         return true;
     }

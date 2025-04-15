@@ -37,11 +37,10 @@ public class LoggingManager {
         }
     }
 
-    public String setupGameLog(Game<?, ?> game) {
+    public String setUpSessionLog(String gameName, int expectedPlayers) { // setupSessionLog instead?
         ensureLogDirectory();
 
-        String filePrefix = LOG_DIR + game.getClass().getSimpleName() + "-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        int expectedPlayers = game.getPlayers().size();
+        String filePrefix = LOG_DIR + gameName + "-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         try {
             generateCSVFile(filePrefix, expectedPlayers);

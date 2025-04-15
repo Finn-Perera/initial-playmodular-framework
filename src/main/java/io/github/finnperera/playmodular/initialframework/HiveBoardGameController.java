@@ -29,11 +29,9 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         this.game = game;
 
         setListening();
-
-        beginGame();
     }
 
-    private void beginGame() { // might need to add more initial calls here later?
+    public void beginGame() { // might need to add more initial calls here later?
         startTime = Instant.now();
         checkGameState();
     }
@@ -48,6 +46,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
 
         checkGameState();
         selectedTile = null;
+        System.out.println("Turn: " + game.getTurn());
     }
 
     private void checkGameState() {
@@ -199,7 +198,9 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     }
 
     private void setListening() {
-        gamePane.setListeners(this);
+        if (gamePane != null) {
+            gamePane.setListeners(this);
+        }
     }
 
     public void addGameResultListener(GameResultListener gameResultListener) {

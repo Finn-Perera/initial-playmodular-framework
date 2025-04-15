@@ -57,6 +57,11 @@ public class HivePlayer implements Player, ConfigurableOptions {
     }
 
     @Override
+    public HivePlayer copy() {
+        return new HivePlayer(new HashMap<>(tiles), colour, playerID);
+    }
+
+    @Override
     public String getPlayerID() {
         return playerID;
     }

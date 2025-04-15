@@ -8,20 +8,20 @@ import io.github.finnperera.playmodular.initialframework.HivePanes.HiveGamePane;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.scene.control.Button;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 /*
@@ -38,6 +38,24 @@ public class Main extends Application implements GameResultListener {
 
     LoggingManager loggingManager = new LoggingManager();
     String filePrefix; // this limits the main/client to only run one set of simulations at a time
+
+    private static HiveAI getHiveAI(HiveColour colour, ChoiceBox<String> playerChoiceBox) {
+        HiveAI updatedPlayer = null;
+
+        switch (playerChoiceBox.getValue()) {
+            case "Monte Carlo" -> updatedPlayer = new HiveAI(colour,
+                    new MonteCarloModel<>());
+            case "Minimax" -> {
+                updatedPlayer = new HiveAI(colour, null);
+                updatedPlayer.setModel(new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
+            }
+            case "Alpha-Beta" -> {
+                updatedPlayer = new HiveAI(colour, null);
+                updatedPlayer.setModel(new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
+            }
+        }
+        return updatedPlayer;
+    }
 
     @Override
     public void start(Stage stage) {
@@ -135,29 +153,133 @@ public class Main extends Application implements GameResultListener {
         root.getChildren().add(playerChoiceContainer);
     }
 
-    private static HiveAI getHiveAI(HiveColour colour, ChoiceBox<String> playerChoiceBox) {
-        HiveAI updatedPlayer = null;
-
-        switch (playerChoiceBox.getValue()) {
-            case "Monte Carlo" -> updatedPlayer = new HiveAI(colour,
-                    new MonteCarloModel<>());
-            case "Minimax" -> {
-                updatedPlayer = new HiveAI(colour, null);
-                updatedPlayer.setModel(new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
-            }
-            case "Alpha-Beta" -> {
-                updatedPlayer = new HiveAI(colour, null);
-                updatedPlayer.setModel(new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
-            }
-        }
-        return updatedPlayer;
-    }
-
     private void createGameButton(Stage stage, Pane root) {
         Button createGameButton = new Button("Create Game");
         CheckBox loggingCheckBox = new CheckBox("Generate Log");
+        Spinner<Integer> numGamesSpinner = new Spinner<>(1, 10000, 1);
+        numGamesSpinner.setEditable(true);
+        numGamesSpinner.setDisable(true);
+        CheckBox disableVisuals = new CheckBox("Disable Visual");
+        Spinner<Integer> simultaneousSimCount = new Spinner<>(1, Runtime.getRuntime().availableProcessors() / 2, 1);
+        simultaneousSimCount.setEditable(true);
+        simultaneousSimCount.setDisable(true);
+
+        CheckBox multiGameCheckBox = new CheckBox("Multiple Games");
+        VBox multiGameContainer = new VBox();
+        multiGameSetUp(multiGameContainer, multiGameCheckBox, numGamesSpinner, disableVisuals, simultaneousSimCount);
+
         createGameButton.setOnAction(event -> {
-            HiveGame game;
+            int numGames = numGamesSpinner.getValue();
+            int threadCount = simultaneousSimCount.getValue();
+            boolean shouldLog = loggingCheckBox.isSelected();
+            boolean isVisualDisabled = disableVisuals.isSelected();
+            boolean isMultiGame = multiGameCheckBox.isSelected();
+
+            if (isVisualDisabled && (player1Selection.get() == null || player2Selection.get() == null)) {
+                showError("When Humans are playing you must have the visual component enabled", "Lack of Visual");
+                return;
+            }
+
+            if (shouldLog) {
+                filePrefix = loggingManager.setUpSessionLog("HiveGame", 2);
+            }
+
+            if (isMultiGame && isVisualDisabled) {
+                runGamesSimultaneously(numGames, threadCount, shouldLog);
+            } else {
+                runGamesSequentially(numGames, isVisualDisabled, shouldLog, stage);
+            }
+        });
+        root.getChildren().add(createGameButton);
+        root.getChildren().add(loggingCheckBox);
+        root.getChildren().add(multiGameContainer);
+    }
+
+    private void runGamesSimultaneously(int numGames, int threadCount, boolean shouldLog) {
+        try (ExecutorService executor = Executors.newFixedThreadPool(threadCount)) {
+            for (int i = 0; i < numGames; i++) {
+                executor.submit(() -> {
+                    HiveGame game = createGame();
+                    HiveGamePane gamePane = new HiveGamePane(game);
+                    HiveBoardGameController controller = new HiveBoardGameController(gamePane, game);
+
+                    if (shouldLog) {
+                        enableLogging(controller);
+                    }
+
+                    controller.beginGame();
+                });
+            }
+        }
+    }
+
+    private void runGamesSequentially(int numGames, boolean isVisualDisabled, boolean shouldLog, Stage stage) {
+        for (int i = 0; i < numGames; i++) {
+            HiveGame game = createGame();
+            HiveGamePane gamePane = new HiveGamePane(game);
+            HiveBoardGameController controller = new HiveBoardGameController(gamePane, game);
+
+            if (shouldLog) {
+                enableLogging(controller);
+            }
+
+            if (!isVisualDisabled) {
+                Scene gameScene = new Scene(gamePane, 1280, 640);
+                Platform.runLater(() -> stage.setScene(gameScene));
+            }
+
+            controller.beginGame();
+        }
+    }
+
+    private HiveGame createGame() {
+        HivePlayer player1 = player1Selection.get().copy();
+        HivePlayer player2 = player2Selection.get().copy();
+
+        updatePlayerOptions(player1, player1Options);
+        updatePlayerOptions(player2, player2Options);
+
+        if (player1 == null) player1 = new HivePlayer(HiveColour.WHITE);
+        if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
+
+        return new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
+    }
+
+    private void multiGameSetUp(Pane container,
+                                CheckBox multiGameCheckBox,
+                                Spinner<Integer> numGamesSpinner,
+                                CheckBox disableVisuals,
+                                Spinner<Integer> simultaneousSimCount) {
+
+        VBox spinnerContainer = new VBox(new Label("Number of Games"), numGamesSpinner);
+        VBox simCount = new VBox(new Label("Threads Running Simulations"), simultaneousSimCount);
+
+        multiGameCheckBox.setId("checkbox-multi");
+        multiGameCheckBox.setOnAction(event -> {
+            if (multiGameCheckBox.isSelected()) {
+                numGamesSpinner.setDisable(false);
+                if (disableVisuals.isSelected()) {
+                    simultaneousSimCount.setDisable(false);
+                }
+            } else {
+                numGamesSpinner.setDisable(true);
+                simultaneousSimCount.setDisable(true);
+            }
+        });
+        disableVisuals.setOnAction(event ->
+                simultaneousSimCount.setDisable(!disableVisuals.isSelected() || !multiGameCheckBox.isSelected()));
+        container.getChildren().add(disableVisuals);
+        container.getChildren().add(multiGameCheckBox);
+        container.getChildren().add(spinnerContainer);
+        container.getChildren().add(simCount);
+    }
+
+    private void enableLogging(HiveBoardGameController controller) { // needs to be more modular
+        controller.addGameResultListener(this);
+    }
+
+    private void onGameButtonClicked(Stage stage, HiveGame hiveGame, boolean loggingEnabled) {
+         /*HiveGame game;
             HivePlayer player1 = player1Selection.get();
             HivePlayer player2 = player2Selection.get();
 
@@ -168,27 +290,40 @@ public class Main extends Application implements GameResultListener {
             if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
 
             game = new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
+*/
 
-            onGameButtonClicked(stage, game, loggingCheckBox.isSelected());
-        });
-        root.getChildren().add(createGameButton);
-        root.getChildren().add(loggingCheckBox);
-    }
+        /*try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            for (int i = 0; i < numGames; i++) {
+                final int gameIndex = i;
 
-    private void enableLogging(HiveGame game, HiveBoardGameController controller) {
-        controller.addGameResultListener(this);
-        filePrefix = loggingManager.setupGameLog(game);
-    }
+                executor.submit(() -> {
+                    HivePlayer player1 = player1Selection.get().copy();
+                    HivePlayer player2 = player2Selection.get().copy();
 
-    private void onGameButtonClicked(Stage stage, HiveGame hiveGame, boolean loggingEnabled) {
+                    if (player1 == null) player1 = new HivePlayer(HiveColour.WHITE);
+                    if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
 
-        HiveGamePane gamePane = new HiveGamePane(hiveGame);
+                    updatePlayerOptions(player1, player1Options);
+                    updatePlayerOptions(player2, player2Options);
+
+                    HiveGame game = new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
+
+                    // should log could be handled here?
+                    onGameButtonClicked(stage, game, shouldLog);
+
+                    System.out.println("Game " + gameIndex + " completed");
+                });
+            }
+        }*/
+
+
+        /*HiveGamePane gamePane = new HiveGamePane(hiveGame);
         HiveBoardGameController controller = new HiveBoardGameController(gamePane, hiveGame);
 
-        if (loggingEnabled) enableLogging(hiveGame, controller);
+        if (loggingEnabled) enableLogging(hiveGame, controller); // handle a level higher?
 
         Scene gameScene = new Scene(gamePane, 1280, 640);
-        stage.setScene(gameScene);
+        //Platform.runLater(() -> stage.setScene(gameScene));*/
     }
 
     private List<Node> createAIOptions(List<Option<?>> options) {
@@ -220,6 +355,14 @@ public class Main extends Application implements GameResultListener {
                 configurablePlayer.setOptions(options); // set these options, which feels redundant?
             }
         }
+    }
+
+    private void showError(String message, String title) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     @Override
