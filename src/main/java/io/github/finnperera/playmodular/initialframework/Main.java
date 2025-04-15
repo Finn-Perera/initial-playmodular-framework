@@ -71,6 +71,7 @@ public class Main extends Application implements GameResultListener {
         stage.show();
     }
 
+    // #BUG - need to update from onGameButtonClicked
     private void initialiseGameStateButton(Pane root, Scene scene, Stage stage) {
         Button createGameState = new Button("Create Game State");
         createGameState.setOnAction(event -> {
@@ -81,7 +82,7 @@ public class Main extends Application implements GameResultListener {
                             /*HiveBoard game = new HiveBoard(hiveGame);
                             Scene gameScene = new Scene(game, 1280, 640);
                             stage.setScene(gameScene);*/
-                            onGameButtonClicked(stage, hiveGame, false);
+                            onGameButtonClicked(stage, hiveGame, false); // this line should change
                         })
                         .exceptionally(ex -> {
                             System.out.println("Something went wrong: " + ex.getMessage());
@@ -279,51 +280,7 @@ public class Main extends Application implements GameResultListener {
     }
 
     private void onGameButtonClicked(Stage stage, HiveGame hiveGame, boolean loggingEnabled) {
-         /*HiveGame game;
-            HivePlayer player1 = player1Selection.get();
-            HivePlayer player2 = player2Selection.get();
 
-            updatePlayerOptions(player1, player1Options);
-            updatePlayerOptions(player2, player2Options);
-
-            if (player1 == null) player1 = new HivePlayer(HiveColour.WHITE);
-            if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
-
-            game = new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
-*/
-
-        /*try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-            for (int i = 0; i < numGames; i++) {
-                final int gameIndex = i;
-
-                executor.submit(() -> {
-                    HivePlayer player1 = player1Selection.get().copy();
-                    HivePlayer player2 = player2Selection.get().copy();
-
-                    if (player1 == null) player1 = new HivePlayer(HiveColour.WHITE);
-                    if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
-
-                    updatePlayerOptions(player1, player1Options);
-                    updatePlayerOptions(player2, player2Options);
-
-                    HiveGame game = new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
-
-                    // should log could be handled here?
-                    onGameButtonClicked(stage, game, shouldLog);
-
-                    System.out.println("Game " + gameIndex + " completed");
-                });
-            }
-        }*/
-
-
-        /*HiveGamePane gamePane = new HiveGamePane(hiveGame);
-        HiveBoardGameController controller = new HiveBoardGameController(gamePane, hiveGame);
-
-        if (loggingEnabled) enableLogging(hiveGame, controller); // handle a level higher?
-
-        Scene gameScene = new Scene(gamePane, 1280, 640);
-        //Platform.runLater(() -> stage.setScene(gameScene));*/
     }
 
     private List<Node> createAIOptions(List<Option<?>> options) {
@@ -336,9 +293,10 @@ public class Main extends Application implements GameResultListener {
     }
 
     private void updatePlayerOptions(HivePlayer player, List<Option<?>> options) { // given a player
+        List<Option<?>> localOptions = new ArrayList<>(options);
         Option<?> playerIDOption = null;
 
-        for (Option<?> option : options) {
+        for (Option<?> option : localOptions) {
             if ("Player ID".equals(option.getName())) {
                 playerIDOption = option;
             }
@@ -346,13 +304,13 @@ public class Main extends Application implements GameResultListener {
 
         if (playerIDOption != null) {
             player.setOptions(List.of(playerIDOption));
-            options.remove(playerIDOption);
+            localOptions.remove(playerIDOption);
         }
 
 
         if (player instanceof HiveAI hiveAI) { // if the player is a hiveAI
             if (hiveAI.getModel() instanceof ConfigurableOptions configurablePlayer) { // does the hive ai have options
-                configurablePlayer.setOptions(options); // set these options, which feels redundant?
+                configurablePlayer.setOptions(localOptions); // set these options, which feels redundant?
             }
         }
     }
