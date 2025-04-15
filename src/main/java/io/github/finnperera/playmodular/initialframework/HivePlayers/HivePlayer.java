@@ -16,7 +16,6 @@ public class HivePlayer implements Player, ConfigurableOptions {
         createHand();
 
         this.colour = colour;
-        playerID = getClass().getSimpleName();
     }
 
     public HivePlayer(HashMap<HiveTileType, Integer> tiles, HiveColour colour, String playerID) {
@@ -74,7 +73,7 @@ public class HivePlayer implements Player, ConfigurableOptions {
     @Override
     public List<Option<?>> getOptions() {
         return List.of(
-                new Option<>("Player ID", "Identifier for Player", OptionType.TEXTBOX, String.class, getClass().getSimpleName(), null, null)
+                new Option<>("Player ID", "Identifier for Player", OptionType.TEXTBOX, String.class, playerID, null, null)
         );
     }
 

@@ -177,7 +177,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
     @Override
     public GameResult getGameResult(Player player) {
         if (player == null) throw new IllegalArgumentException("Player cannot be null");
-        if (turn > 300) return GameResult.DRAW; // This is temp
+        if (turn >= 300) return GameResult.DRAW; // This is temp
         GameResult result = null;
         HivePlayer hivePlayer = (HivePlayer) player;
 
