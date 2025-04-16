@@ -39,22 +39,26 @@ public class Main extends Application implements GameResultListener {
     LoggingManager loggingManager = new LoggingManager();
     String filePrefix; // this limits the main/client to only run one set of simulations at a time
 
-    private static HiveAI getHiveAI(HiveColour colour, ChoiceBox<String> playerChoiceBox) {
-        HiveAI updatedPlayer = null;
+    private HivePlayer getHivePlayer(HiveColour colour, ChoiceBox<String> playerChoiceBox) { // why static?
+        HivePlayer updatedPlayer = null;
 
         switch (playerChoiceBox.getValue()) {
-            case "Monte Carlo" -> updatedPlayer = new HiveAI(colour,
-                    new MonteCarloModel<>());
+            case "Monte Carlo" -> updatedPlayer = new HiveAI(colour, new MonteCarloModel<>());
             case "Minimax" -> {
                 updatedPlayer = new HiveAI(colour, null);
-                updatedPlayer.setModel(new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
+                setModel((HiveAI) updatedPlayer, new MinimaxModel<>(updatedPlayer, new BasicHeuristic()));
             }
             case "Alpha-Beta" -> {
                 updatedPlayer = new HiveAI(colour, null);
-                updatedPlayer.setModel(new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
+                setModel((HiveAI) updatedPlayer, new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
             }
+            case "Human" -> updatedPlayer = new HivePlayer(colour);
         }
         return updatedPlayer;
+    }
+
+    private void setModel(HiveAI aiPlayer, AI<Hex, HiveTile> aiModel) { // not modular
+        aiPlayer.setModel(aiModel);
     }
 
     @Override
@@ -112,46 +116,50 @@ public class Main extends Application implements GameResultListener {
         VBox optionContainer = new VBox();
         optionContainer.setId(colour.name() + " options");
 
+        optionContainer.getChildren().add(getPlayerIDOptionNode(getHivePlayer(colour, playerChoiceBox), colour, player));
+
         playerChoiceBox.setOnAction(event -> {
             optionContainer.getChildren().clear();
 
-            HiveAI updatedPlayer = getHiveAI(colour, playerChoiceBox);
+            HivePlayer updatedPlayer = getHivePlayer(colour, playerChoiceBox);
 
-            Option<?> playerID = updatedPlayer.getOptions().getFirst();
+            optionContainer.getChildren().add(getPlayerIDOptionNode(updatedPlayer, colour, player));
 
-            if (colour == HiveColour.WHITE) {
-                player1Options.clear();
-                player1Options.add(playerID);
-            } else {
-                player2Options.clear();
-                player2Options.add(playerID);
-            }
-
-            player.set(updatedPlayer);
-            Node playerIDNode = OptionFactory.createOptionControl(playerID);
-
-            if (updatedPlayer != null) {
-                optionContainer.getChildren().add(playerIDNode);
-            }
-
-            if (updatedPlayer != null && updatedPlayer.getModel() instanceof ConfigurableOptions configurableOptions) {
-                List<Option<?>> options = configurableOptions.getOptions();
-                if (colour == HiveColour.WHITE) {
-                    player1Options.addAll(options);
-                } else {
-                    player2Options.addAll(options);
-                }
-                List<Node> aiOptions = createAIOptions(options); // creates a list of nodes that contain vbox of labels and control nodes
-                for (Node aiOption : aiOptions) { // for each of these nodes add them to the container
-                    optionContainer.getChildren().add(aiOption);
+            if (updatedPlayer instanceof HiveAI ai) {
+                if (ai.getModel() instanceof ConfigurableOptions configurableOptions) {
+                    List<Option<?>> options = configurableOptions.getOptions();
+                    if (colour == HiveColour.WHITE) {
+                        player1Options.addAll(options);
+                    } else {
+                        player2Options.addAll(options);
+                    }
+                    List<Node> aiOptions = createAIOptions(options); // creates a list of nodes that contain vbox of labels and control nodes
+                    for (Node aiOption : aiOptions) { // for each of these nodes add them to the container
+                        optionContainer.getChildren().add(aiOption);
+                    }
                 }
             }
-
-
         });
 
         VBox playerChoiceContainer = new VBox(playerChoiceBox, optionContainer);
         root.getChildren().add(playerChoiceContainer);
+    }
+
+    private Node getPlayerIDOptionNode(HivePlayer player, HiveColour colour,  AtomicReference<HivePlayer> playerRef) {
+        Option<?> playerID = player.getOptions().getFirst();
+
+        // this seems wrong to do
+        if (colour == HiveColour.WHITE) {
+            player1Options.clear();
+            player1Options.add(playerID);
+        } else {
+            player2Options.clear();
+            player2Options.add(playerID);
+        }
+
+        playerRef.set(player);
+
+        return OptionFactory.createOptionControl(playerID);
     }
 
     private void createGameButton(Stage stage, Pane root) {
@@ -239,10 +247,6 @@ public class Main extends Application implements GameResultListener {
 
         updatePlayerOptions(player1, player1Options);
         updatePlayerOptions(player2, player2Options);
-
-        if (player1 == null) player1 = new HivePlayer(HiveColour.WHITE);
-        if (player2 == null) player2 = new HivePlayer(HiveColour.BLACK);
-
         return new HiveGame(new HiveRuleEngine(), player1, player2, new HiveBoardState());
     }
 

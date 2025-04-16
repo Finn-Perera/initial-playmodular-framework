@@ -10,6 +10,7 @@ import javafx.util.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -188,7 +189,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
 
     private GameLog generateGameLog() {
         Instant endTime = Instant.now();
-        HashMap<Player, GameResult> gameResultMap = new HashMap<>();
+        HashMap<Player, GameResult> gameResultMap = new LinkedHashMap<>();
 
         for (Player player : game.getPlayers()) {
             gameResultMap.put(player, game.getGameResult(player));
