@@ -25,14 +25,14 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
     private static final String DESC_EXPLORATION_CONSTANT =
             "Factor for exploration (high) or exploitation (low) on nodes, typically at sqrt(2)";
     private static final String DESC_ITERATIONS = "Number of game simulations run for each move";
-
-    private MCTSNode<P, T> rootNode;
     // Could make these final and have a default value in the options but not set until set options called?
     public double explorationConstant = 1.27; // Constant factor for UCB (sqrt(2) is a common val)
-    private int iterations = 500;
     public int maxMoves = 150;
+    private MCTSNode<P, T> rootNode;
+    private int iterations = 500;
 
-    public MonteCarloModel() {}
+    public MonteCarloModel() {
+    }
 
     /*
     need to prune before doing most of this?
@@ -155,8 +155,8 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
         MCTSNode<P, T> current = returnNode;
         while (current != null) {
             synchronized (current) {
-                    boolean isMaxPlayer = current.getGameState().getCurrentPlayer().equals(lastPlayer);
-                    current.addValue(isMaxPlayer ? score : 1.0 - score);
+                boolean isMaxPlayer = current.getGameState().getCurrentPlayer().equals(lastPlayer);
+                current.addValue(isMaxPlayer ? score : 1.0 - score);
             }
             current = current.getParent();
         }
@@ -208,9 +208,9 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
     @Override
     public List<Option<?>> getOptions() {
         return List.of(
-                new Option<>(OPT_MAX_MOVES, DESC_MAX_MOVES, OptionType.SPINNER, Integer.class, 300, 10, 1000),
-                new Option<>(OPT_EXPLO_CONST, DESC_EXPLORATION_CONSTANT, OptionType.SPINNER, Double.class, 1.27, 0.1, 10.0),
-                new Option<>(OPT_ITERATIONS, DESC_ITERATIONS, OptionType.SPINNER, Integer.class, 1500, 1, 10000)
+                new Option<>(OPT_MAX_MOVES, DESC_MAX_MOVES, OptionType.SPINNER, Integer.class, maxMoves, 10, 1000),
+                new Option<>(OPT_EXPLO_CONST, DESC_EXPLORATION_CONSTANT, OptionType.SPINNER, Double.class, explorationConstant, 0.1, 10.0),
+                new Option<>(OPT_ITERATIONS, DESC_ITERATIONS, OptionType.SPINNER, Integer.class, iterations, 1, 10000)
         );
     }
 
@@ -231,5 +231,14 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
                     throw new IllegalArgumentException("Unknown option: " + option.getName());
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public AI<P, T> copy(Player newPlayer) {
+        AI<P, T> copy = new MonteCarloModel<>();
+        ConfigurableOptions configurable = (ConfigurableOptions) copy;
+        configurable.setOptions(getOptions());
+        return (AI<P, T>) configurable;
     }
 }

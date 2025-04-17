@@ -10,6 +10,7 @@ import javafx.util.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -29,11 +30,9 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         this.game = game;
 
         setListening();
-
-        beginGame();
     }
 
-    private void beginGame() { // might need to add more initial calls here later?
+    public void beginGame() { // might need to add more initial calls here later?
         startTime = Instant.now();
         checkGameState();
     }
@@ -48,6 +47,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
 
         checkGameState();
         selectedTile = null;
+        System.out.println("Turn: " + game.getTurn());
     }
 
     private void checkGameState() {
@@ -189,7 +189,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
 
     private GameLog generateGameLog() {
         Instant endTime = Instant.now();
-        HashMap<Player, GameResult> gameResultMap = new HashMap<>();
+        HashMap<Player, GameResult> gameResultMap = new LinkedHashMap<>();
 
         for (Player player : game.getPlayers()) {
             gameResultMap.put(player, game.getGameResult(player));
@@ -199,7 +199,9 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     }
 
     private void setListening() {
-        gamePane.setListeners(this);
+        if (gamePane != null) {
+            gamePane.setListeners(this);
+        }
     }
 
     public void addGameResultListener(GameResultListener gameResultListener) {

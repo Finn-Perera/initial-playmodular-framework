@@ -21,7 +21,7 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
     private int threadCount = Runtime.getRuntime().availableProcessors() - 1;
     private int maxDepth = 2;
 
-    private final Player maxPlayer;
+    private Player maxPlayer;
     private final Heuristic<P, T> heuristic;
     private ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
@@ -121,7 +121,7 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
     @Override
     public List<Option<?>> getOptions() {
         return List.of(
-                new Option<>(OPT_MAX_DEPTH, DESC_MAX_DEPTH , OptionType.SPINNER, Integer.class, maxDepth, 1, 10),
+                new Option<>(OPT_MAX_DEPTH, DESC_MAX_DEPTH, OptionType.SPINNER, Integer.class, maxDepth, 1, 10),
                 new Option<>(OPT_THREAD_COUNT, DESC_THREAD_COUNT, OptionType.SPINNER, Integer.class, threadCount, 1, Runtime.getRuntime().availableProcessors())
         );
     }
@@ -141,6 +141,15 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
                     throw new IllegalArgumentException("Unknown option: " + option.getName());
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public AI<P, T> copy(Player newPlayer) {
+        AI<P, T> copy = new AlphaBetaMinimaxModel<>(newPlayer, heuristic);
+        ConfigurableOptions configurable = (ConfigurableOptions) copy;
+        configurable.setOptions(this.getOptions());
+        return (AI<P, T>) configurable;
     }
 }
 

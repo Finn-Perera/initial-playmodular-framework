@@ -159,6 +159,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
     // basic terminal check, needs improvement
     @Override
     public boolean isTerminalState() {
+        if (turn >= 300) return true; // draw at 300+ moves
         if (boardState.getPieceCount() < 7) return false; // No queen can be surrounded
         for (HiveTile queen : boardState.getQueens()) {
             // if every hex surrounding queen has a tile
@@ -176,6 +177,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
     @Override
     public GameResult getGameResult(Player player) {
         if (player == null) throw new IllegalArgumentException("Player cannot be null");
+        if (turn >= 300) return GameResult.DRAW; // This is temp
         GameResult result = null;
         HivePlayer hivePlayer = (HivePlayer) player;
 

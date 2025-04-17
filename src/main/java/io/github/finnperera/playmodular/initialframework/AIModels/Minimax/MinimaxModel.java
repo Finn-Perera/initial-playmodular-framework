@@ -34,6 +34,11 @@ public class MinimaxModel<P, T> implements AI<P, T> {
         return bestMove;
     }
 
+    @Override
+    public AI<P, T> copy(Player newPlayer) {
+        return new MinimaxModel<>(newPlayer, heuristic);
+    }
+
     private int minimax(Game<P, T> gameState, int depth, boolean maxPlayer) {
         if (depth <= 0 || gameState.isTerminalState()) {
             return heuristic.getEvaluation(gameState, this.maxPlayer);
