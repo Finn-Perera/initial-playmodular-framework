@@ -143,13 +143,12 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public AI<P, T> copy(Player newPlayer) {
         AI<P, T> copy = new AlphaBetaMinimaxModel<>(newPlayer, heuristic);
         ConfigurableOptions configurable = (ConfigurableOptions) copy;
         configurable.setOptions(this.getOptions());
-        return (AI<P, T>) configurable;
+        return copy;
     }
 }
 

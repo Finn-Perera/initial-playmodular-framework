@@ -233,12 +233,11 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public AI<P, T> copy(Player newPlayer) {
         AI<P, T> copy = new MonteCarloModel<>();
         ConfigurableOptions configurable = (ConfigurableOptions) copy;
         configurable.setOptions(getOptions());
-        return (AI<P, T>) configurable;
+        return copy;
     }
 }
