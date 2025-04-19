@@ -148,7 +148,7 @@ public class Main extends Application implements GameResultListener {
             }
 
             if (shouldLog) {
-                filePrefix = loggingManager.setUpSessionLog("HiveGame", 2);
+                filePrefix = loggingManager.setUpSessionLog(gameConfig);
             }
 
             if (isMultiGame && isVisualDisabled) {

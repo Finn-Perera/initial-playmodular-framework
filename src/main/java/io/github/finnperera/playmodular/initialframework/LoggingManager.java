@@ -1,5 +1,6 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
 
 import java.io.File;
@@ -37,27 +38,30 @@ public class LoggingManager {
         }
     }
 
-    public String setUpSessionLog(String gameName, int expectedPlayers) { // setupSessionLog instead?
+    public String setUpSessionLog(LoggableGameConfig loggableConfig) {
         ensureLogDirectory();
 
-        String filePrefix = LOG_DIR + gameName + "-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String filePrefix = LOG_DIR + loggableConfig.getGameName() + "-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         try {
-            generateCSVFile(filePrefix, expectedPlayers);
+            generateCSVFile(filePrefix, loggableConfig.getExpectedPlayers());
+            generateJSONFile(filePrefix, loggableConfig);
         } catch (IOException e) {
             e.printStackTrace(); // maybe let it throw to the top?
         }
-
-        //generateJSONFile(filePrefix);
 
         return filePrefix;
     }
 
     private void generateCSVFile(String filePrefix, int expectedPlayers) throws IOException {
-        try(CSVWriter csvWriter = new CSVWriter(new FileWriter(filePrefix + ".csv", true))) {
+        try (CSVWriter csvWriter = new CSVWriter(new FileWriter(filePrefix + ".csv", true))) {
             // write header
             List<String> header = new ArrayList<>();
-            header.add("Game ID"); header.add("Start Time"); header.add("End Time"); header.add("Total Time"); header.add("Turns");
+            header.add("Game ID");
+            header.add("Start Time");
+            header.add("End Time");
+            header.add("Total Time");
+            header.add("Turns");
             for (int i = 1; i <= expectedPlayers; i++) {
                 header.add("Player " + (i));
                 header.add("Result " + (i));
@@ -67,8 +71,16 @@ public class LoggingManager {
         }
     }
 
-    private void generateJSONFile(String filePrefix) {
+    private void generateJSONFile(String filePrefix, LoggableGameConfig loggableConfig) throws IOException {
+        File jsonFile = new File(filePrefix + ".json");
+        if (!jsonFile.exists()) {
+            if (!jsonFile.createNewFile()) {
+                throw new RuntimeException("Unable to create json file");
+            }
+        }
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, loggableConfig.toLogMap());
     }
 
     public synchronized void addResultToFiles(String filePrefix, GameLog log) {

@@ -11,12 +11,13 @@ import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
 acts as a sort of factory for hive games?
 can be the configurable and loggable part
  */
-public class HiveGameConfig {
+public class HiveGameConfig implements LoggableGameConfig {
     private HivePlayer player1;
     private HivePlayer player2;
     private List<Option<?>> player1Options;
@@ -135,5 +136,41 @@ public class HiveGameConfig {
 
     public HivePlayer getPlayerByColour(HiveColour colour) {
         return colour == HiveColour.WHITE ? player1 : player2;
+    }
+
+    @Override
+    public String getGameName() {
+        return "Hive";
+    }
+
+    @Override
+    public int getExpectedPlayers() {
+        return 2;
+    }
+
+    @Override
+    public Map<String, Object> toLogMap() {
+        Map<String, Object> logMap = new LinkedHashMap<>();
+        logMap.put("player1", playerToMap(player1, player1Options));
+        logMap.put("player2", playerToMap(player2, player2Options));
+        logMap.put("ruleEngine", "standard");
+
+        Map<String, Object> gameConfigMap = new LinkedHashMap<>();
+        gameConfigMap.put("game config", logMap);
+        return gameConfigMap;
+    }
+
+    private Map<String, Object> playerToMap(HivePlayer player, List<Option<?>> options) {
+        Map<String, Object> playerMap = new LinkedHashMap<>();
+        playerMap.put("type", player.getClass().getSimpleName());
+        if (player instanceof HiveAI hiveAI) {
+            playerMap.put("model", hiveAI.getModel().getClass().getSimpleName());
+        }
+
+        playerMap.put("colour", player.getColour());
+        for (Option<?> option : options) {
+            playerMap.put(option.getName(), option.getValue());
+        }
+        return playerMap;
     }
 }
