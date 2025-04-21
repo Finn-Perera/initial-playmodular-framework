@@ -30,7 +30,7 @@ public class HiveAI extends HivePlayer {
         this.model = model;
     }
 
-    public AI<Hex, HiveTile> getModel() {
+    public AI<Hex, HiveTile> getAIModel() {
         return model;
     }
 

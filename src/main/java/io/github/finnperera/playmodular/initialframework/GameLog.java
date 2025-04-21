@@ -4,10 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class GameLog {
     private String gameID;
@@ -72,5 +69,24 @@ public class GameLog {
         }
 
         return list.toArray(new String[0]);
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("gameID", gameID);
+        Map<String, Object> playerMap = new HashMap<>();
+        for (Player player : playerResults.keySet()) {
+            if (player.isAI()) {
+                if (player.getAIModel() instanceof Loggable loggable) {
+                    playerMap.put(player.getPlayerID(), loggable.toLogMap());
+                } else {
+                    playerMap.put(player.getPlayerID(), "logging not enabled");
+                }
+            } else {
+                // fill human stats here?
+            }
+        }
+        map.put("players", playerMap);
+        return map;
     }
 }

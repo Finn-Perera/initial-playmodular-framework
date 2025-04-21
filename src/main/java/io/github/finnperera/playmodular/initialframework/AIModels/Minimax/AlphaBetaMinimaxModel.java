@@ -3,13 +3,16 @@ package io.github.finnperera.playmodular.initialframework.AIModels.Minimax;
 import io.github.finnperera.playmodular.initialframework.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOptions {
+public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOptions, Loggable {
     private static final String OPT_MAX_DEPTH = "Maximum depth";
     private static final String OPT_THREAD_COUNT = "Number of threads";
 
@@ -17,17 +20,17 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
     private static final String DESC_THREAD_COUNT = "Number threads used in parallelisation," +
             " lower the value if bottle-necking is occurring, increase if the calculations take too long.";
 
-
+    private final Heuristic<P, T> heuristic;
+    private final AtomicLong numNodesExplored;
     private int threadCount = Runtime.getRuntime().availableProcessors() - 1;
     private int maxDepth = 2;
-
-    private Player maxPlayer;
-    private final Heuristic<P, T> heuristic;
+    private final Player maxPlayer;
     private ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
     public AlphaBetaMinimaxModel(Player maxPlayer, Heuristic<P, T> heuristic) {
         this.maxPlayer = maxPlayer;
         this.heuristic = heuristic;
+        numNodesExplored = new AtomicLong(0);
     }
 
     /*
@@ -41,6 +44,7 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
         List<Future<EvaluatedMove<P, T>>> futures = new ArrayList<>();
 
         for (Move<P, T> move : moves) {
+            incrementExploredNodes();
             Game<P, T> newState = game.makeMove(move);
             Future<EvaluatedMove<P, T>> future = executor.submit(() ->
                     new EvaluatedMove<>
@@ -66,6 +70,8 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
     }
 
     private int minimax(Game<P, T> gameState, int alpha, int beta, int depth, boolean maxPlayer) {
+        incrementExploredNodes();
+
         if (depth <= 0 || gameState.isTerminalState()) {
             return heuristic.getEvaluation(gameState, this.maxPlayer);
         }
@@ -108,14 +114,13 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
         executor = Executors.newFixedThreadPool(threadCount);
     }
 
-    public static class EvaluatedMove<P, T> {
-        private final Move<P, T> move;
-        private final int value;
+    private void incrementExploredNodes() {
+        numNodesExplored.incrementAndGet();
+    }
 
-        public EvaluatedMove(Move<P, T> move, int value) {
-            this.move = move;
-            this.value = value;
-        }
+    // might be useless? just for logging?
+    public long getNumExploredNodes() {
+        return numNodesExplored.get();
     }
 
     @Override
@@ -149,6 +154,23 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
         ConfigurableOptions configurable = (ConfigurableOptions) copy;
         configurable.setOptions(this.getOptions());
         return copy;
+    }
+
+    @Override
+    public Map<String, Object> toLogMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("num explored nodes", numNodesExplored.get());
+        return map;
+    }
+
+    public static class EvaluatedMove<P, T> {
+        private final Move<P, T> move;
+        private final int value;
+
+        public EvaluatedMove(Move<P, T> move, int value) {
+            this.move = move;
+            this.value = value;
+        }
     }
 }
 

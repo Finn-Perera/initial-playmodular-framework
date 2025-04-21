@@ -95,7 +95,7 @@ public class Main extends Application implements GameResultListener {
             HivePlayer updatedPlayer = gameConfig.configureHivePlayer(colour, playerChoiceBox.getValue());;
             optionContainer.getChildren().add(getPlayerIDOptionNode(colour, updatedPlayer));
 
-            if (updatedPlayer instanceof HiveAI ai && ai.getModel() instanceof ConfigurableOptions config) {
+            if (updatedPlayer instanceof HiveAI ai && ai.getAIModel() instanceof ConfigurableOptions config) {
                 List<Option<?>> options = config.getOptions();
                 gameConfig.setPlayer(colour, updatedPlayer, options);
 

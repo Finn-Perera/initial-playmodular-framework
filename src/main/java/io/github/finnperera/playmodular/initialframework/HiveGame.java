@@ -48,7 +48,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
             moves.addAll(pieceMoves.stream().filter(this::isValidMove).toList());
         });
 
-        Collections.shuffle(moves);
+        Collections.shuffle(moves); // if I add seeded randomness, this needs to be adjusted
         return moves;
     }
 
@@ -98,7 +98,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
             HiveColour currentPlayerCol = getCurrentPlayer().getColour();
             Player player = getCurrentPlayer();
             if (player instanceof HiveAI ai) {
-                player = new HiveAI(ai.removeTile(move.getPieceToMove().getTileType()), ai.getColour(), ai.getModel(), player.getPlayerID());
+                player = new HiveAI(ai.removeTile(move.getPieceToMove().getTileType()), ai.getColour(), ai.getAIModel(), player.getPlayerID());
             } else {
                 player = new HivePlayer(((HivePlayer) player).removeTile(move.getPieceToMove().getTileType()), currentPlayerCol, player.getPlayerID());
             }

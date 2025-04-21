@@ -1,6 +1,8 @@
 package io.github.finnperera.playmodular.initialframework;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.opencsv.CSVWriter;
 
 import java.io.File;
@@ -9,7 +11,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /* The logging manager to handle games to CSV and JSON
 Aims:
@@ -80,13 +84,17 @@ public class LoggingManager {
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, loggableConfig.toLogMap());
+        Map<String, Object> rootMap = new HashMap<>();
+        rootMap.put("game config", loggableConfig.toLogMap());
+        rootMap.put("games", new ArrayList<>());
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, rootMap);
     }
 
     public synchronized void addResultToFiles(String filePrefix, GameLog log) {
         File csvFile = getCSVFile(filePrefix);
-
+        File jsonFile = getJSONFile(filePrefix);
         addToCSVFile(csvFile, log);
+        addToJSONFile(jsonFile, log);
     }
 
     private synchronized void addToCSVFile(File csv, GameLog log) {
@@ -98,7 +106,22 @@ public class LoggingManager {
     }
 
     private synchronized void addToJSONFile(File json, GameLog log) {
+        ObjectMapper objectMapper = new ObjectMapper();
 
+        try {
+            ObjectNode root = (ObjectNode) objectMapper.readTree(json);
+
+            ArrayNode gamesArray;
+            gamesArray = (ArrayNode) root.get("games");
+
+            ObjectNode game = objectMapper.convertValue(log.toMap(), ObjectNode.class);
+
+            gamesArray.add(game);
+
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(json, root);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private File getCSVFile(String filePrefix) {

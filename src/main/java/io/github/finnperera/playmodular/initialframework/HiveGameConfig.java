@@ -113,7 +113,7 @@ public class HiveGameConfig implements LoggableGameConfig {
         }
 
 
-        if (player instanceof HiveAI hiveAI && hiveAI.getModel() instanceof ConfigurableOptions config) { // if the player is a hiveAI
+        if (player instanceof HiveAI hiveAI && hiveAI.getAIModel() instanceof ConfigurableOptions config) { // if the player is a hiveAI
             config.setOptions(localOptions); // set these options, which feels redundant?
         }
     }
@@ -155,22 +155,20 @@ public class HiveGameConfig implements LoggableGameConfig {
         logMap.put("player2", playerToMap(player2, player2Options));
         logMap.put("ruleEngine", "standard");
 
-        Map<String, Object> gameConfigMap = new LinkedHashMap<>();
-        gameConfigMap.put("game config", logMap);
-        return gameConfigMap;
+        return logMap;
     }
 
     private Map<String, Object> playerToMap(HivePlayer player, List<Option<?>> options) {
-        Map<String, Object> playerMap = new LinkedHashMap<>();
-        playerMap.put("type", player.getClass().getSimpleName());
+        Map<String, Object> playerConfigMap = new LinkedHashMap<>();
+        playerConfigMap.put("type", player.getClass().getSimpleName());
         if (player instanceof HiveAI hiveAI) {
-            playerMap.put("model", hiveAI.getModel().getClass().getSimpleName());
+            playerConfigMap.put("model", hiveAI.getAIModel().getClass().getSimpleName());
         }
 
-        playerMap.put("colour", player.getColour());
+        playerConfigMap.put("colour", player.getColour());
         for (Option<?> option : options) {
-            playerMap.put(option.getName(), option.getValue());
+            playerConfigMap.put(option.getName(), option.getValue());
         }
-        return playerMap;
+        return playerConfigMap;
     }
 }
