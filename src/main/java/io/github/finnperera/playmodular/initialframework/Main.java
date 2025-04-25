@@ -27,16 +27,20 @@ import java.util.concurrent.Executors;
      */
 public class Main extends Application implements GameResultListener {
     HiveGameConfig gameConfig = new HiveGameConfig();
-
     LoggingManager loggingManager = new LoggingManager();
     String filePrefix;
+    Stage stage;
+    Scene mainMenuScene;
 
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
         Pane root = new HBox();
         Scene scene = new Scene(root, 1280, 640);
         stage.setTitle("Hive");
         stage.setScene(scene);
+
+        this.mainMenuScene = scene;
 
         initialiseGameStateButton(root, scene, stage);
         createPlayerChoiceBox(root, HiveColour.WHITE);
@@ -181,22 +185,9 @@ public class Main extends Application implements GameResultListener {
     }
 
     private void runGamesSequentially(int numGames, boolean isVisualDisabled, boolean shouldLog, Stage stage) {
-        for (int i = 0; i < numGames; i++) {
-            HiveGame game = gameConfig.createGame();
-            HiveGamePane gamePane = new HiveGamePane(game);
-            HiveBoardGameController controller = new HiveBoardGameController(gamePane, game);
-
-            if (shouldLog) {
-                enableLogging(controller);
-            }
-
-            if (!isVisualDisabled) {
-                Scene gameScene = new Scene(gamePane, 1280, 640);
-                Platform.runLater(() -> stage.setScene(gameScene));
-            }
-
-            controller.beginGame();
-        }
+        SequentialGameService sequentialGameService =
+                new SequentialGameService(filePrefix, shouldLog, isVisualDisabled, gameConfig, loggingManager, mainMenuScene, stage);
+        sequentialGameService.play(numGames);
     }
 
     private void multiGameSetUp(Pane container,

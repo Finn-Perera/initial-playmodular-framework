@@ -30,6 +30,7 @@ public class HiveGamePane extends StackPane {
         handPaneList.add(new HiveHandPane((HivePlayer) game.getPlayers().getFirst()));
         handPaneList.add(new HiveHandPane((HivePlayer) game.getPlayers().getLast()));
         board = new HiveBoardPane(game.getBoardState());
+        this.endGamePane = new EndGamePane(game);
         this.setPrefSize(1280, 1024);
         initialiseUI();
     }
@@ -65,18 +66,11 @@ public class HiveGamePane extends StackPane {
         this.getChildren().add(container);
         HBox.setHgrow(container, Priority.ALWAYS);
 
-        endGamePane = new EndGamePane(game);
         this.getChildren().add(endGamePane);
     }
 
     public void showEndGame() {
-        endGamePane.setResultLabel();
-        endGamePane.setVisible(true);
-    }
-
-    public void showEndGame(GameResult result) {
-        endGamePane.setResultLabel(result);
-        endGamePane.setVisible(true);
+        endGamePane.show(game);
     }
 
     public HiveBoardPane getBoard() {
@@ -89,6 +83,14 @@ public class HiveGamePane extends StackPane {
 
     public void setGame(HiveGame game) {
         this.game = game;
+    }
+
+    public void setOnMainMenuClicked(Runnable onMainMenuClicked) {
+        endGamePane.setOnMainMenuClicked(onMainMenuClicked);
+    }
+
+    public void setOnNextGameClicked(Runnable onNextGameClicked) {
+        endGamePane.setOnNextGameClicked(onNextGameClicked);
     }
 
     public void setListeners(HiveBoardGameController controller) {

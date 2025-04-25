@@ -4,22 +4,21 @@ import io.github.finnperera.playmodular.initialframework.GameResult;
 import io.github.finnperera.playmodular.initialframework.HiveColour;
 import io.github.finnperera.playmodular.initialframework.HiveGame;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
 public class EndGamePane extends Pane {
-    HiveGame game;
-    HiveColour winningColour;
-    Label resultLabel;
-    Scene returnScene;
+    private HiveGame game;
+    private HiveColour winningColour;
+    private Label resultLabel;
+    private Runnable onMainMenuClicked;
+    private Runnable onNextGameClicked;
+    private boolean showNextGame = false;
 
     public EndGamePane(HiveGame game) {
         this.game = game;
-
-        initialiseUI();
         this.setVisible(false);
     }
 
@@ -34,6 +33,10 @@ public class EndGamePane extends Pane {
         container.getChildren().add(resultLabel());
         container.getChildren().add(returnToMenuButton());
         container.getChildren().add(viewBoardButton());
+
+        if (showNextGame) {
+            container.getChildren().add(nextGameButton());
+        }
 
         container.layoutXProperty().bind(this.widthProperty().subtract(container.widthProperty()).divide(2));
         container.layoutYProperty().bind(this.heightProperty().subtract(container.heightProperty()).divide(2));
@@ -59,18 +62,39 @@ public class EndGamePane extends Pane {
         this.getChildren().add(container);
     }
 
-    // i want button to view board?
+    public void show(HiveGame game) {
+        this.game = game;
+        initialiseUI();
+        setResultLabel();
+        this.setVisible(true);
+    }
+
+    private Button nextGameButton() {
+        Button nextButton = new Button("Next Game");
+        nextButton.setOnMouseClicked(event -> {
+            if (onNextGameClicked != null) {
+                onNextGameClicked.run();
+            }
+        });
+        return nextButton;
+    }
+
     private Button viewBoardButton() {
         Button viewBoardButton = new Button("View Board");
         viewBoardButton.setOnMouseClicked(event -> hideUI());
         return viewBoardButton;
     }
 
-    // i want button to return to main menu
     private Button returnToMenuButton() {
         Button returnButton = new Button("Return to Main Menu");
-        returnButton.setOnMouseClicked(null); // not sure how to return back right now?
+        returnButton.setOnMouseClicked(event -> mainMenuClicked());
         return returnButton;
+    }
+
+    private void mainMenuClicked() {
+        if (onMainMenuClicked != null) {
+            onMainMenuClicked.run();
+        }
     }
 
     private Label resultLabel() {
@@ -98,7 +122,12 @@ public class EndGamePane extends Pane {
         }
     }
 
-    public void setReturnScene(Scene returnScene) {
-        this.returnScene = returnScene;
+    public void setOnMainMenuClicked(Runnable callback) {
+        this.onMainMenuClicked = callback;
+    }
+
+    public void setOnNextGameClicked(Runnable callback) {
+        this.onNextGameClicked = callback;
+        this.showNextGame = true;
     }
 }

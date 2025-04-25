@@ -24,6 +24,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     private HiveTile selectedTile;
     private List<GameResultListener> gameResultListeners = new ArrayList<>();
     private Instant startTime;
+    private Runnable onGameEnd; // could incorporate this into a general controller
 
     public HiveBoardGameController(HiveGamePane gamePane, HiveGame game) {
         this.gamePane = gamePane;
@@ -52,10 +53,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
 
     private void checkGameState() {
         if (game.isTerminalState()) {
-            gamePane.showEndGame();
-
-            GameLog gameLog = generateGameLog();
-            gameResultListeners.forEach(gameResultListener -> gameResultListener.onGameResult(gameLog));
+            finishGame();
             return;
         }
 
@@ -70,6 +68,15 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
                 makeAITurn((HiveAI) game.getCurrentPlayer());
             });
             pause.play();
+        }
+    }
+
+    private void finishGame() {
+        gamePane.showEndGame();
+        GameLog gameLog = generateGameLog();
+        gameResultListeners.forEach(gameResultListener -> gameResultListener.onGameResult(gameLog));
+        if (onGameEnd != null) {
+            onGameEnd.run();
         }
     }
 
@@ -202,6 +209,10 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
         if (gamePane != null) {
             gamePane.setListeners(this);
         }
+    }
+
+    public void setOnGameEnd(Runnable callback) {
+        this.onGameEnd = callback;
     }
 
     public void addGameResultListener(GameResultListener gameResultListener) {
