@@ -1,8 +1,10 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
-public class HiveTile implements Piece {
+public class HiveTile implements Piece, LoggableComponent {
 
     private HiveTileType tileType;
     private Hex hex;
@@ -45,5 +47,14 @@ public class HiveTile implements Piece {
     @Override
     public int hashCode() {
         return Objects.hash(tileType, hex, colour);
+    }
+
+    @Override
+    public Map<String, Object> toLogMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("tile type", tileType.toString());
+        map.put("colour", colour.toString());
+        map.put("position", hex.toString());
+        return map;
     }
 }

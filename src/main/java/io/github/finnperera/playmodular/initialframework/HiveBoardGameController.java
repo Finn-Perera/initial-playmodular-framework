@@ -195,7 +195,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
             gameResultMap.put(player, game.getGameResult(player));
         }
 
-        return new GameLog(startTime, endTime, gameResultMap, game.getTurn());
+        return new GameLog(startTime, endTime, gameResultMap, game.getTurn(), game.getMoveList());
     }
 
     private void setListening() {

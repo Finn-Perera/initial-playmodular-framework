@@ -1,5 +1,7 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class HiveMove extends Move<Hex, HiveTile> {
@@ -47,5 +49,14 @@ public class HiveMove extends Move<Hex, HiveTile> {
         return placementMove == hiveMove.placementMove &&
                 Objects.equals(pieceToMove, hiveMove.pieceToMove) &&
                 Objects.equals(nextPosition, hiveMove.nextPosition);
+    }
+
+    @Override
+    public Map<String, Object> toLogMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("pieceToMove", pieceToMove.toLogMap());
+        map.put("nextPosition", nextPosition.toString());
+        map.put("placementMove", placementMove);
+        return map;
     }
 }

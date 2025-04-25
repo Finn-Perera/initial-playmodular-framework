@@ -1,15 +1,13 @@
 package io.github.finnperera.playmodular.initialframework;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * This class was created mostly from this blog:
  * <a href="https://www.redblobgames.com/grids/hexagons/implementation.html">...</a>
  * Which outlines the majority of functions a hexagonal engine requires.
  */
-public class Hex implements Position{
+public class Hex implements Position, LoggableComponent {
     private static final Hex[] hexDirections =
             new Hex[]{new Hex(1, 0, -1), new Hex(1, -1, 0), new Hex(0, -1, 1),
                     new Hex(-1, 0, 1), new Hex(-1, 1, 0), new Hex(0, 1, -1)};
@@ -21,19 +19,6 @@ public class Hex implements Position{
         this.q = q;
         this.r = r;
         this.s = s;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Hex hex = (Hex) obj;
-        return q == hex.q && r == hex.r && s == hex.s;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(q, r);
     }
 
     public static Hex hexAdd(Hex a, Hex b) {
@@ -74,6 +59,19 @@ public class Hex implements Position{
         return hexAdd(hex, hexDirection(direction));
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Hex hex = (Hex) obj;
+        return q == hex.q && r == hex.r && s == hex.s;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(q, r);
+    }
+
     public List<Hex> getNeighbours() {
         List<Hex> neighbours = new ArrayList<>();
         for (int i = 0; i < hexDirections.length; i++) {
@@ -110,5 +108,14 @@ public class Hex implements Position{
                 ", r=" + r +
                 ", s=" + s +
                 '}';
+    }
+
+    @Override
+    public Map<String, Object> toLogMap() {
+        Map<String, Object> positionMap = new HashMap<>();
+        positionMap.put("q", q);
+        positionMap.put("r", r);
+        positionMap.put("s", s);
+        return positionMap;
     }
 }

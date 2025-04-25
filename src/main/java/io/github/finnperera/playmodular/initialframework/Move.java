@@ -1,6 +1,6 @@
 package io.github.finnperera.playmodular.initialframework;
 
-public abstract class Move<P, T> {
+public abstract class Move<P, T> implements LoggableComponent {
     protected T pieceToMove;
     protected P nextPosition;
 

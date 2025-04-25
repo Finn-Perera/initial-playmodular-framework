@@ -13,14 +13,17 @@ public class GameLog {
     private Duration totalTime;
     private int totalTurns;
     private Map<Player, GameResult> playerResults;
+    private ArrayList<? extends Move<?, ?>> moveList;
 
-    public GameLog(Instant startTime, Instant endTime, Map<Player, GameResult> playerResults, int totalTurns) {
+    public GameLog(Instant startTime, Instant endTime, Map<Player, GameResult> playerResults, int totalTurns,
+                   ArrayList<? extends Move<?, ?>> moveList) {
         gameID = UUID.randomUUID().toString();
         this.startTime = startTime;
         this.endTime = endTime;
         this.totalTime = Duration.between(startTime, endTime);
         this.playerResults = playerResults;
         this.totalTurns = totalTurns;
+        this.moveList = new ArrayList<>(moveList);
     }
 
     public String getGameID() {
@@ -83,10 +86,15 @@ public class GameLog {
                     playerMap.put(player.getPlayerID(), "logging not enabled");
                 }
             } else {
-                // fill human stats here?
+                playerMap.put(player.getPlayerID(), "logging not enabled");
             }
         }
         map.put("players", playerMap);
+        ArrayList<Map<String, Object>> moveMapList = new ArrayList<>();
+        for (Move<?, ?> move : moveList) {
+            moveMapList.add(move.toLogMap());
+        }
+        map.put("moves", moveMapList);
         return map;
     }
 }
