@@ -77,7 +77,7 @@ public class GameLog {
         Map<String, Object> playerMap = new HashMap<>();
         for (Player player : playerResults.keySet()) {
             if (player.isAI()) {
-                if (player.getAIModel() instanceof Loggable loggable) {
+                if (player.getAIModel() instanceof LoggableComponent loggable) {
                     playerMap.put(player.getPlayerID(), loggable.toLogMap());
                 } else {
                     playerMap.put(player.getPlayerID(), "logging not enabled");

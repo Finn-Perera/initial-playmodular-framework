@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOptions, Loggable {
+public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOptions, LoggableComponent {
     private static final String OPT_MAX_DEPTH = "Maximum depth";
     private static final String OPT_THREAD_COUNT = "Number of threads";
 
