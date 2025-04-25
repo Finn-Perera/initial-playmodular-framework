@@ -34,9 +34,6 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
     public MonteCarloModel() {
     }
 
-    /*
-    need to prune before doing most of this?
-     */
     @Override
     public Move<P, T> getNextMove(Game<P, T> game, List<? extends Move<P, T>> moves) {
         rootNode = new MCTSNode<>(game, null, moves, null); // set root as current game state
@@ -132,12 +129,11 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
         }
         System.out.println("Simulation finished with depth: " + depth);
 
-        return game; // return final result
+        return game;
     }
 
     private void backpropagation(Game<P, T> game, MCTSNode<P, T> returnNode) {
         System.out.println("BackPropagating Stage");
-        Player lastPlayer = game.getCurrentOpponent();
         double score;
         if (game.isTerminalState()) {
             GameResult result = game.getGameResult(rootNode.getGameState().getCurrentPlayer());
@@ -155,8 +151,10 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
         MCTSNode<P, T> current = returnNode;
         while (current != null) {
             synchronized (current) {
-                boolean isMaxPlayer = current.getGameState().getCurrentPlayer().equals(lastPlayer);
-                current.addValue(isMaxPlayer ? score : 1.0 - score);
+
+                boolean isMaxPlayer = current.getGameState().getCurrentPlayer().getPlayerID()
+                        .equals(rootNode.getGameState().getCurrentPlayer().getPlayerID());
+                current.addValue(!isMaxPlayer ? score : -score);
             }
             current = current.getParent();
         }
