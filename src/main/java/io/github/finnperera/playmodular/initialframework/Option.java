@@ -1,5 +1,7 @@
 package io.github.finnperera.playmodular.initialframework;
 
+import java.util.List;
+
 public class Option<T> {
 
     private String name;
@@ -9,6 +11,7 @@ public class Option<T> {
     private T value;
     private T minValue;
     private T maxValue;
+    private List<T> choices;
 
     public Option(String name, String description, OptionType type, Class<T> valueType, T value, T minValue, T maxValue) {
         this.name = name;
@@ -18,6 +21,18 @@ public class Option<T> {
         this.value = value;
         this.minValue = minValue;
         this.maxValue = maxValue;
+        this.choices = null;
+    }
+
+    public Option(String name, String description, OptionType type, Class<T> valueType, T value, T minValue, T maxValue, List<T> choices) {
+        this.name = name;
+        this.description = description;
+        this.type = type;
+        this.valueType = valueType;
+        this.value = value;
+        this.minValue = minValue;
+        this.maxValue = maxValue;
+        this.choices = choices;
     }
 
     public T getOptionValue() {
@@ -36,6 +51,7 @@ public class Option<T> {
         private T value;
         private T minValue;
         private T maxValue;
+        private List<T> choices = null;
 
         public Builder<T> name(String name) { this.name = name; return this; }
         public Builder<T> description(String description) { this.description = description; return this; }
@@ -44,9 +60,10 @@ public class Option<T> {
         public Builder<T> value(T value) { this.value = value; return this; }
         public Builder<T> setMinValue(T minValue) { this.minValue = minValue; return this; }
         public Builder<T> setMaxValue(T maxValue) { this.maxValue = maxValue; return this; }
+        public Builder<T> setChoices(List<T> choices) { this.choices = choices; return this; }
 
         public Option<T> build() {
-            return new Option<>(name, description, type, valueType, value, minValue, maxValue);
+            return new Option<>(name, description, type, valueType, value, minValue, maxValue, choices);
         }
     }
 
@@ -109,4 +126,8 @@ public class Option<T> {
     public void setMaxValue(T maxValue) {
         this.maxValue = maxValue;
     }
+
+    public List<T> getChoices() { return choices; }
+
+    public void setChoices(List<T> choices) { this.choices = choices; }
 }
