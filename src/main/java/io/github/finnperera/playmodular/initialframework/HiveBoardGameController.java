@@ -29,6 +29,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     public HiveBoardGameController(HiveGamePane gamePane, HiveGame game) {
         this.gamePane = gamePane;
         this.game = game;
+        gamePane.setDrawButtonOnClick(this::finishGame);
 
         setListening();
     }

@@ -93,6 +93,10 @@ public class HiveGamePane extends StackPane {
         endGamePane.setOnNextGameClicked(onNextGameClicked);
     }
 
+    public void setDrawButtonOnClick(Runnable callback) {
+        board.setDrawButtonOnClick(callback);
+    }
+
     public void setListeners(HiveBoardGameController controller) {
         board.setClickListener(controller);
         handPaneList.forEach(handPane -> handPane.setClickListener(controller));

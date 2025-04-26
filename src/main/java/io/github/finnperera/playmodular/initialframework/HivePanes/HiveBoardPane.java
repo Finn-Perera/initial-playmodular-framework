@@ -3,6 +3,7 @@ package io.github.finnperera.playmodular.initialframework.HivePanes;
 import io.github.finnperera.playmodular.initialframework.*;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -39,6 +40,8 @@ public class HiveBoardPane extends Pane {
     private TileClickListener clickListener;
 
     private double lastMouseX, lastMouseY;
+    private final Button drawButton = new Button("Draw");
+    private Runnable drawButtonOnClick = null;
 
     public HiveBoardPane(HiveBoardState hiveGame) {
         this.hiveGame = hiveGame;
@@ -71,7 +74,8 @@ public class HiveBoardPane extends Pane {
                 controlPressed = true;
             }
             if (controlPressed && event.getCode() == KeyCode.D) {
-                debugMode = true;
+                debugMode = !debugMode;
+                handleDebugMode(debugMode);
             }
         });
         this.setOnKeyReleased(event -> {
@@ -95,9 +99,28 @@ public class HiveBoardPane extends Pane {
         });
     }
 
+    private void handleDebugMode(boolean debugMode) {
+        if (debugMode) {
+            drawButton.setOnMouseClicked(event -> {
+                if (drawButtonOnClick != null) {
+                    drawButtonOnClick.run();
+                }
+            });
+            drawButton.setVisible(true);
+            drawButton.setDisable(false);
+        } else {
+            drawButton.setVisible(false);
+            drawButton.setDisable(true);
+        }
+    }
+
     private void renderBoard() {
         this.getChildren().clear();
         boardContent = new Group();
+
+        drawButton.setVisible(false);
+        drawButton.setDisable(true);
+        this.getChildren().add(drawButton);
 
         fillBoardContent();
         this.getChildren().add(boardContent);
@@ -260,6 +283,10 @@ public class HiveBoardPane extends Pane {
 
     public void setClickListener(TileClickListener clickListener) {
         this.clickListener = clickListener;
+    }
+
+    public void setDrawButtonOnClick(Runnable callback) {
+        this.drawButtonOnClick = callback;
     }
 
     public double getTransformX() {

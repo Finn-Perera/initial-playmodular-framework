@@ -201,6 +201,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
                 }
             }
         }
+        if (result == null) result = GameResult.DRAW; // If a result is passed in that is not a win or loss it is a draw
         return result;
     }
 
