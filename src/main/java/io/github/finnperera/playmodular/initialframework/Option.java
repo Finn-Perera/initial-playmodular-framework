@@ -28,6 +28,32 @@ public class Option<T> {
         }
     }
 
+    public static class Builder<T> {
+        private String name;
+        private String description;
+        private OptionType type;
+        private Class<T> valueType;
+        private T value;
+        private T minValue;
+        private T maxValue;
+
+        public Builder<T> name(String name) { this.name = name; return this; }
+        public Builder<T> description(String description) { this.description = description; return this; }
+        public Builder<T> type(OptionType type) { this.type = type; return this; }
+        public Builder<T> valueType(Class<T> valueType) { this.valueType = valueType; return this; }
+        public Builder<T> value(T value) { this.value = value; return this; }
+        public Builder<T> setMinValue(T minValue) { this.minValue = minValue; return this; }
+        public Builder<T> setMaxValue(T maxValue) { this.maxValue = maxValue; return this; }
+
+        public Option<T> build() {
+            return new Option<>(name, description, type, valueType, value, minValue, maxValue);
+        }
+    }
+
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
+    }
+
     public String getName() {
         return name;
     }
