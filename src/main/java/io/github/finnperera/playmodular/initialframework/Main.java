@@ -32,6 +32,14 @@ public class Main extends Application implements GameResultListener {
     Stage stage;
     Scene mainMenuScene;
 
+    Button createGameButton = new Button("Create Game");
+    CheckBox loggingCheckBox = new CheckBox("Generate Log");
+    CheckBox disableVisuals = new CheckBox("Disable Visual");
+    CheckBox multiGameCheckBox = new CheckBox("Multiple Games");
+
+    Spinner<Integer> numGamesSpinner;
+    Spinner<Integer> simultaneousSimCount;
+
     @Override
     public void start(Stage stage) {
         this.stage = stage;
@@ -56,11 +64,11 @@ public class Main extends Application implements GameResultListener {
             try {
                 onDesignGameButtonClicked(scene, stage)
                         .thenAccept(hiveGame -> {
-                            // do something with it?
-                            /*HiveBoard game = new HiveBoard(hiveGame);
-                            Scene gameScene = new Scene(game, 1280, 640);
-                            stage.setScene(gameScene);*/
-                            onGameButtonClicked(stage, hiveGame, false); // this line should change
+                            prepareGameSetUp(disableVisuals.isSelected(), loggingCheckBox.isSelected());
+                            runGamesSequentiallyFromGameState(numGamesSpinner.getValue(),
+                                    disableVisuals.isSelected(),
+                                    loggingCheckBox.isSelected(),
+                                    hiveGame);
                         })
                         .exceptionally(ex -> {
                             System.out.println("Something went wrong: " + ex.getMessage());
@@ -124,16 +132,11 @@ public class Main extends Application implements GameResultListener {
     private void createGameButton(Stage stage, Pane root) {
         // creating game option buttons
         VBox multiGameContainer = new VBox();
-        Button createGameButton = new Button("Create Game");
-        CheckBox loggingCheckBox = new CheckBox("Generate Log");
-        CheckBox disableVisuals = new CheckBox("Disable Visual");
-        CheckBox multiGameCheckBox = new CheckBox("Multiple Games");
-
-        Spinner<Integer> numGamesSpinner = new Spinner<>(1, 10000, 1);
+        numGamesSpinner = new Spinner<>(1, 10000, 1);
         numGamesSpinner.setEditable(true);
         numGamesSpinner.setDisable(true);
 
-        Spinner<Integer> simultaneousSimCount = new Spinner<>(1, Runtime.getRuntime().availableProcessors() / 2, 1);
+        simultaneousSimCount = new Spinner<>(1, Runtime.getRuntime().availableProcessors() / 2, 1);
         simultaneousSimCount.setEditable(true);
         simultaneousSimCount.setDisable(true);
 
@@ -146,24 +149,28 @@ public class Main extends Application implements GameResultListener {
             boolean isVisualDisabled = disableVisuals.isSelected();
             boolean isMultiGame = multiGameCheckBox.isSelected();
 
-            if (isVisualDisabled && (!gameConfig.getPlayer1().isAI() || !gameConfig.getPlayer2().isAI())) {
-                showError("When Humans are playing you must have the visual component enabled", "Lack of Visual");
-                return;
-            }
-
-            if (shouldLog) {
-                filePrefix = loggingManager.setUpSessionLog(gameConfig);
-            }
+            prepareGameSetUp(isVisualDisabled, shouldLog);
 
             if (isMultiGame && isVisualDisabled) {
                 runGamesSimultaneously(numGames, threadCount, shouldLog);
             } else {
-                runGamesSequentially(numGames, isVisualDisabled, shouldLog, stage);
+                runGamesSequentially(numGames, isVisualDisabled, shouldLog);
             }
         });
         root.getChildren().add(createGameButton);
         root.getChildren().add(loggingCheckBox);
         root.getChildren().add(multiGameContainer);
+    }
+
+    private void prepareGameSetUp(boolean isVisualDisabled, boolean shouldLog) {
+        if (isVisualDisabled && (!gameConfig.getPlayer1().isAI() || !gameConfig.getPlayer2().isAI())) {
+            showError("When Humans are playing you must have the visual component enabled", "Lack of Visual");
+            return;
+        }
+
+        if (shouldLog) {
+            filePrefix = loggingManager.setUpSessionLog(gameConfig);
+        }
     }
 
     private void runGamesSimultaneously(int numGames, int threadCount, boolean shouldLog) {
@@ -184,10 +191,16 @@ public class Main extends Application implements GameResultListener {
         }
     }
 
-    private void runGamesSequentially(int numGames, boolean isVisualDisabled, boolean shouldLog, Stage stage) {
+    private void runGamesSequentially(int numGames, boolean isVisualDisabled, boolean shouldLog) {
         SequentialGameService sequentialGameService =
                 new SequentialGameService(filePrefix, shouldLog, isVisualDisabled, gameConfig, loggingManager, mainMenuScene, stage);
         sequentialGameService.play(numGames);
+    }
+
+    private void runGamesSequentiallyFromGameState(int numGames, boolean isVisualDisabled, boolean shouldLog, HiveGame game) {
+        SequentialGameService sequentialGameService =
+                new SequentialGameService(filePrefix, shouldLog, isVisualDisabled, gameConfig, loggingManager, mainMenuScene, stage);
+        sequentialGameService.play(numGames, game);
     }
 
     private void multiGameSetUp(Pane container,
@@ -221,11 +234,6 @@ public class Main extends Application implements GameResultListener {
 
     private void enableLogging(HiveBoardGameController controller) { // needs to be more modular
         controller.addGameResultListener(this);
-    }
-
-    @Deprecated
-    private void onGameButtonClicked(Stage stage, HiveGame hiveGame, boolean loggingEnabled) {
-
     }
 
     private List<Node> createAIOptions(List<Option<?>> options) {

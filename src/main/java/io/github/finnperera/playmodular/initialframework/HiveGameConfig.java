@@ -71,6 +71,22 @@ public class HiveGameConfig implements LoggableGameConfig {
         return new HiveGame(new HiveRuleEngine(), gamePlayer1, gamePlayer2, new HiveBoardState());
     }
 
+    public HiveGame createGameFromGameState(HiveGame game) {
+        HivePlayer predefinedPlayer1 = (HivePlayer) game.getPlayers().getFirst();
+        HivePlayer predefinedPlayer2 = (HivePlayer) game.getPlayers().getLast();
+
+        player1.setHand(predefinedPlayer1.getTiles());
+        player2.setHand(predefinedPlayer2.getTiles());
+
+        HivePlayer gamePlayer1 = player1.copy();
+        HivePlayer gamePlayer2 = player2.copy();
+
+        configurePlayerOptions(gamePlayer1, player1Options);
+        configurePlayerOptions(gamePlayer2, player2Options);
+        return new HiveGame(new HiveRuleEngine(), gamePlayer1, gamePlayer2,
+                new HiveBoardState(game.getBoardState()), game.getTurn(), new ArrayList<>());
+    }
+
     public HivePlayer configureHivePlayer(HiveColour colour, String playerType) {
         HivePlayer updatedPlayer = null;
 

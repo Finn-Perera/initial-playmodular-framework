@@ -14,6 +14,7 @@ public class SequentialGameService {
     private final boolean shouldLog;
     private final boolean isVisualDisabled;
 
+    private HiveGame predefinedGame;
     private int gamesLeft;
 
     public SequentialGameService(String logFilePrefix,
@@ -30,9 +31,16 @@ public class SequentialGameService {
         this.loggingManager = loggingManager;
         this.mainMenuScene = mainMenuScene;
         this.stage = stage;
+        this.predefinedGame = null;
     }
 
     public void play(int numGames) {
+        this.gamesLeft = numGames;
+        playNextGame();
+    }
+
+    public void play(int numGames, HiveGame game) {
+        this.predefinedGame = game;
         this.gamesLeft = numGames;
         playNextGame();
     }
@@ -45,7 +53,13 @@ public class SequentialGameService {
 
         gamesLeft--;
 
-        HiveGame game = gameConfig.createGame();
+        HiveGame game;
+        if (predefinedGame != null) {
+            game = gameConfig.createGameFromGameState(predefinedGame);
+        } else {
+            game = gameConfig.createGame();
+        }
+
         HiveGamePane gamePane = new HiveGamePane(game);
         HiveBoardGameController controller = new HiveBoardGameController(gamePane, game);
 
