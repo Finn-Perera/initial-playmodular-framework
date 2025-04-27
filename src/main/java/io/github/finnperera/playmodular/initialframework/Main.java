@@ -4,7 +4,6 @@ import io.github.finnperera.playmodular.initialframework.HivePanes.HiveGamePane;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -15,16 +14,11 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/*
-    What I need here:
-    - Menu of games to play (can come later)
-    - I need a game instance to be created
-    - A visualiser should create a pane which represents the game board
-     */
 public class Main extends Application implements GameResultListener {
     HiveGameConfig gameConfig = new HiveGameConfig();
     LoggingManager loggingManager = new LoggingManager();
@@ -50,19 +44,25 @@ public class Main extends Application implements GameResultListener {
 
         this.mainMenuScene = scene;
 
-        initialiseGameStateButton(root, scene, stage);
+
+        createHeuristicButton(root);
+        initialiseGameStateButton(root);
         createPlayerChoiceBox(root, HiveColour.WHITE);
         createPlayerChoiceBox(root, HiveColour.BLACK);
-        createGameButton(stage, root);
+        createGameButton(root);
+        gameConfig.setUpdateHeuristicUI(() -> {
+            updateHeuristicDropDown(HiveColour.WHITE);
+            updateHeuristicDropDown(HiveColour.BLACK);
+        });
         stage.show();
     }
 
     // #BUG - need to update from onGameButtonClicked
-    private void initialiseGameStateButton(Pane root, Scene scene, Stage stage) {
+    private void initialiseGameStateButton(Pane root) {
         Button createGameState = new Button("Create Game State");
         createGameState.setOnAction(event -> {
             try {
-                onDesignGameButtonClicked(scene, stage)
+                onDesignGameButtonClicked(mainMenuScene, stage)
                         .thenAccept(hiveGame -> {
                             prepareGameSetUp(disableVisuals.isSelected(), loggingCheckBox.isSelected());
                             runGamesSequentiallyFromGameState(numGamesSpinner.getValue(),
@@ -96,7 +96,7 @@ public class Main extends Application implements GameResultListener {
         playerChoiceBox.setValue("Human");
 
         VBox optionContainer = new VBox();
-        optionContainer.setId(colour.name() + " options");
+        optionContainer.setId(colour.name() + "-options");
 
         optionContainer.getChildren().add(getPlayerIDOptionNode(colour,
                 gameConfig.configureHivePlayer(colour, playerChoiceBox.getValue())));
@@ -104,19 +104,41 @@ public class Main extends Application implements GameResultListener {
         playerChoiceBox.setOnAction(event -> {
             optionContainer.getChildren().clear();
 
-            HivePlayer updatedPlayer = gameConfig.configureHivePlayer(colour, playerChoiceBox.getValue());;
-            optionContainer.getChildren().add(getPlayerIDOptionNode(colour, updatedPlayer));
+            HivePlayer updatedPlayer = gameConfig.configureHivePlayer(colour, playerChoiceBox.getValue());
+            gameConfig.setPlayer(colour, updatedPlayer, null); // set with base options
 
             if (updatedPlayer instanceof HiveAI ai && ai.getAIModel() instanceof ConfigurableOptions config) {
-                List<Option<?>> options = config.getOptions();
-                gameConfig.setPlayer(colour, updatedPlayer, options);
-
-                optionContainer.getChildren().addAll(createAIOptions(options));
+                gameConfig.setPlayer(colour, updatedPlayer, config.getOptions()); // expand if ai options available
+                List<Option<?>> playerUpdatedOptions = gameConfig.getPlayerOptions(colour);
+                optionContainer.getChildren().addAll(createAIOptions(playerUpdatedOptions));
             }
         });
 
         VBox playerChoiceContainer = new VBox(playerChoiceBox, optionContainer);
         root.getChildren().add(playerChoiceContainer);
+    }
+
+    private void updateHeuristicDropDown(HiveColour colour) {
+        Node options = mainMenuScene.getRoot().lookup("#" + colour.toString() + "-options");
+        if (options instanceof Pane pane) {
+            Node heuristicDropDown = pane.lookup("#Heuristic");
+            if (heuristicDropDown != null) {
+                Optional<Option<?>> heuristicOption = gameConfig.getHeuristicOption(colour);
+                if (heuristicOption.isPresent()) {
+                    int index = pane.getChildren().indexOf(heuristicDropDown);
+
+                    Node newDropDown = OptionFactory.createOptionControl(heuristicOption.get());
+                    newDropDown.setId("Heuristic");
+                    if (newDropDown instanceof ChoiceBox<?> dropdown) {
+                        Object firstItem = dropdown.getItems().getFirst();
+                        @SuppressWarnings("unchecked") // I don't like this but can't find alternative option
+                        ChoiceBox<Object> objDropdown = (ChoiceBox<Object>) dropdown;
+                        objDropdown.setValue(firstItem);
+                    }
+                    pane.getChildren().set(index, newDropDown);
+                }
+            }
+        }
     }
 
     // could be difficulty here?
@@ -129,7 +151,7 @@ public class Main extends Application implements GameResultListener {
         return OptionFactory.createOptionControl(playerID);
     }
 
-    private void createGameButton(Stage stage, Pane root) {
+    private void createGameButton(Pane root) {
         // creating game option buttons
         VBox multiGameContainer = new VBox();
         numGamesSpinner = new Spinner<>(1, 10000, 1);
@@ -240,6 +262,7 @@ public class Main extends Application implements GameResultListener {
         List<Node> optionNodes = new ArrayList<>();
         for (Option<?> option : options) {
             Node optionControl = OptionFactory.createOptionControl(option);
+            optionControl.setId(option.getName());
             optionNodes.add(optionControl);
         }
         return optionNodes;
@@ -251,6 +274,26 @@ public class Main extends Application implements GameResultListener {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private void createHeuristicButton(Pane container) {
+        Button createHeuristic = new Button("Create Heuristic");
+        createHeuristic.setOnAction(event -> openHeuristicDialog()
+                .thenAccept(heuristic -> gameConfig.addHeuristic(heuristic))
+                .exceptionally(ex -> {
+                    String err = "Error when creating heuristic";
+                    showError(err, "Error");
+                    System.err.println(err);
+                    return null;
+                }));
+        container.getChildren().add(createHeuristic);
+    }
+
+    private CompletableFuture<Heuristic<?, ?>> openHeuristicDialog() {
+        CompletableFuture<Heuristic<?, ?>> future = new CompletableFuture<>();
+        HeuristicSettingsDialog dialog = new HeuristicSettingsDialog(stage, future::complete);
+        dialog.show();
+        return future;
     }
 
     @Override

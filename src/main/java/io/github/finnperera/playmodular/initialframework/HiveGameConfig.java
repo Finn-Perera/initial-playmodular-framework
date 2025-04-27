@@ -8,10 +8,7 @@ import io.github.finnperera.playmodular.initialframework.HiveHeuristics.BasicHeu
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /*
 acts as a sort of factory for hive games?
@@ -22,12 +19,16 @@ public class HiveGameConfig implements LoggableGameConfig {
     private HivePlayer player2;
     private List<Option<?>> player1Options;
     private List<Option<?>> player2Options;
+    private final ArrayList<Heuristic<?, ?>> heuristics;
+    private Runnable updateHeuristicUI;
 
-    HiveGameConfig() {
+    public HiveGameConfig() {
         player1 = new HivePlayer(HiveColour.WHITE);
         player2 = new HivePlayer(HiveColour.BLACK);
         player1Options = player1.getOptions();
         player2Options = player2.getOptions();
+        heuristics = new ArrayList<>();
+        heuristics.add(new BasicHeuristic());
     }
 
     public void setPlayer(HiveColour colour, HivePlayer player, List<Option<?>> options) {
@@ -55,8 +56,13 @@ public class HiveGameConfig implements LoggableGameConfig {
         for (Option<?> old : oldOptions) {
             optionMap.put(old.getName(), old);
         }
+
         for (Option<?> newOption : newOptions) {
             optionMap.put(newOption.getName(), newOption);
+        }
+
+        if (optionMap.containsKey("Heuristic")) {
+            optionMap.put("Heuristic", buildNewHeuristicOption(optionMap.get("Heuristic")));
         }
 
         return new ArrayList<>(optionMap.values());
@@ -128,9 +134,8 @@ public class HiveGameConfig implements LoggableGameConfig {
             localOptions.remove(playerIDOption);
         }
 
-
         if (player instanceof HiveAI hiveAI && hiveAI.getAIModel() instanceof ConfigurableOptions config) { // if the player is a hiveAI
-            config.setOptions(localOptions); // set these options, which feels redundant?
+            config.setOptions(localOptions);
         }
     }
 
@@ -140,6 +145,70 @@ public class HiveGameConfig implements LoggableGameConfig {
         } else {
             return player2Options;
         }
+    }
+
+    public void addHeuristic(Heuristic<?, ?> heuristic) {
+        heuristics.add(heuristic);
+        Option<?> p1HeuristicOption = null;
+        Option<?> p2HeuristicOption = null;
+
+        for (Option<?> option : player1Options) {
+            if ("Heuristic".equals(option.getName())) {
+                p1HeuristicOption = option;
+            }
+        }
+
+        for (Option<?> option : player2Options) {
+            if ("Heuristic".equals(option.getName())) {
+                p2HeuristicOption = option;
+            }
+        }
+
+        if (p1HeuristicOption != null) {
+            Option<?> newOption = buildNewHeuristicOption(p1HeuristicOption);
+            player1Options.remove(p1HeuristicOption);
+            player1Options.add(newOption);
+        }
+
+        if (p2HeuristicOption != null) {
+            Option<?> newOption = buildNewHeuristicOption(p2HeuristicOption);
+            player2Options.remove(p2HeuristicOption);
+            player2Options.add(newOption);
+        }
+        configurePlayerOptions(player1, player1Options);
+        configurePlayerOptions(player2, player2Options);
+
+        updateHeuristicUI.run();
+    }
+
+    private Option<?> buildNewHeuristicOption(Option<?> oldHeuristicOption) {
+        Option<Object> newOption = null;
+        if (oldHeuristicOption != null) {
+            List<ChoiceItem<Object>> newChoices = new ArrayList<>();
+            for (Heuristic<?, ?> h : heuristics) {
+                newChoices.add(new ChoiceItem<>(h.getHeuristicID(), h));
+            }
+             newOption = Option.builder()
+                    .name(oldHeuristicOption.getName())
+                    .description(oldHeuristicOption.getDescription())
+                    .type(oldHeuristicOption.getType())
+                    .valueType(Object.class)
+                    .value(oldHeuristicOption.getValue())
+                    .setMinValue(null)
+                    .setMaxValue(null)
+                    .setChoices(newChoices)
+                    .build();
+        }
+        return newOption;
+    }
+
+    public Optional<Option<?>> getHeuristicOption(HiveColour colour) {
+        List<Option<?>> options = getPlayerOptions(colour);
+        return options.stream().filter(item -> "Heuristic".equals(item.getName())).findFirst();
+    }
+
+    public void setUpdateHeuristicUI(Runnable updateHeuristicUI) {
+        this.updateHeuristicUI = updateHeuristicUI;
     }
 
     public HivePlayer getPlayer1() {
@@ -183,7 +252,11 @@ public class HiveGameConfig implements LoggableGameConfig {
 
         playerConfigMap.put("colour", player.getColour());
         for (Option<?> option : options) {
-            playerConfigMap.put(option.getName(), option.getValue());
+            if (option.getValue() instanceof LoggableComponent loggableComponent) {
+                playerConfigMap.put(option.getName(), loggableComponent.toLogMap());
+            } else {
+                playerConfigMap.put(option.getName(), option.getValue().toString());
+            }
         }
         return playerConfigMap;
     }

@@ -3,25 +3,45 @@ package io.github.finnperera.playmodular.initialframework.HiveHeuristics;
 import io.github.finnperera.playmodular.initialframework.*;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
 
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
+public class BasicHeuristic extends Heuristic<Hex, HiveTile> implements ConfigurableOptions, LoggableComponent {
     // These variables could be adjusted in menus
-    public static int WIN_SCORE = Integer.MAX_VALUE / 2;
-    public static int LOSE_SCORE = Integer.MIN_VALUE / 2;
-    public static int OWN_QUEEN_SURROUND_SCORE = -50; // Per piece surrounding queen?
-    public static int OWN_QUEEN_STUCK_SCORE = -300;
-    public static int OPPONENT_QUEEN_SURROUND_SCORE = 50;
-    public static int OPPONENT_QUEEN_STUCK_SCORE = 300;
+    public Option<String> heuristicID = Option.<String>builder()
+            .name("Heuristic ID")
+            .description("Identifies heuristic for use, should be unique")
+            .type(OptionType.TEXTBOX)
+            .valueType(String.class)
+            .value("BasicHeuristic")
+            .setMinValue(null)
+            .setMaxValue(null)
+            .build();
+    public Option<Integer> winScore =
+            intOption("Win Score", "Score attributed to winning the game", Integer.MAX_VALUE / 2);
+    public Option<Integer> loseScore =
+            intOption("Lose Score", "Score attributed to losing the game", Integer.MIN_VALUE / 2);
+    public Option<Integer> ownQueenSurroundScore =
+            intOption("Own Queen Surround Score", "Score for each piece surrounding own queen", -50);
+    public Option<Integer> ownQueenStuckScore =
+            intOption("Own Queen Stuck Score", "Score for own queen being stuck", -300);
+    public Option<Integer> oppQueenSurroundScore =
+            intOption("Opponent Queen Surround Score", "Score for each piece surrounding the opponent queen", 50);
+    public Option<Integer> oppQueenStuckScore =
+            intOption("Opponent Queen Stuck Score", "Score for opponent queen being stuck", 300);
 
-    public static int QUEEN_TILE_VALUE = 70;
-    public static int ANT_TILE_VALUE = 80;
-    public static int BEETLE_TILE_VALUE = 60;
-    public static int GRASSHOPPER_TILE_VALUE = 50;
-    public static int SPIDER_TILE_VALUE = 50;
+    public Option<Integer> queenTileVal =
+            intOption("Queen Tile Value", "Score assigned to Queen tile", 70);
+    public Option<Integer> antTileVal =
+            intOption("Ant Tile Value", "Score assigned to Ant tile", 80);
+    public Option<Integer> beetleTileVal =
+            intOption("Beetle Tile Value", "Score assigned to Beetle tile", 60);
+    public Option<Integer> grasshopperTileVal =
+            intOption("Grasshopper Tile Value", "Score assigned to Grasshopper tile", 50);
+    public Option<Integer> spiderTileVal =
+            intOption("Spider Tile Value", "Score assigned to Spider tile", 50);
 
-
+    @Override
     public int getEvaluation(Game<Hex, HiveTile> game) {
         HiveGame hiveGame = (HiveGame) game;
 
@@ -36,6 +56,7 @@ public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
         return evaluationScore;
     }
 
+    @Override
     public int getEvaluation(Game<Hex, HiveTile> game, Player maxPlayer) {
         HiveGame hiveGame = (HiveGame) game;
         HivePlayer hiveMaxPlayer = (HivePlayer) maxPlayer;
@@ -55,7 +76,7 @@ public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
         if (!game.isTerminalState()) return 0;
 
         GameResult result = game.getGameResult(player);
-        return result == GameResult.WIN ? WIN_SCORE : LOSE_SCORE;
+        return result == GameResult.WIN ? winScore.getValue() : loseScore.getValue();
     }
 
     private int ownQueenSurrounded(HiveGame game, HivePlayer maxPlayer) {
@@ -71,12 +92,12 @@ public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
         int stuckScore;
         if (isMaxPlayer) {
             // Queen is of own player
-            surroundScore = OWN_QUEEN_SURROUND_SCORE;
-            stuckScore = OWN_QUEEN_STUCK_SCORE;
+            surroundScore = ownQueenSurroundScore.getValue();
+            stuckScore = ownQueenStuckScore.getValue();
         } else {
             // Queen is of opponent
-            surroundScore = OPPONENT_QUEEN_SURROUND_SCORE;
-            stuckScore = OPPONENT_QUEEN_STUCK_SCORE;
+            surroundScore = oppQueenSurroundScore.getValue();
+            stuckScore = oppQueenStuckScore.getValue();
         }
 
         HiveTile queen = game.getBoardState().getQueenOfPlayer(playerWithQueen);
@@ -102,7 +123,7 @@ public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
         AtomicInteger totalScore = new AtomicInteger();
 
         // This could probably all be refactored to one loop or put moveable pieces into hashmap?
-        // maybe i hash move or the tile that is moving with the board state
+        // maybe I hash move or the tile that is moving with the board state
         for (Stack<HiveTile> stack : game.getBoardState().getBoard().getAllPieces()) {
             // Pieces stuck under other pieces
             if (stack.size() > 1) {
@@ -147,22 +168,85 @@ public class BasicHeuristic implements Heuristic<Hex, HiveTile> {
     private int pieceValues(HiveTileType tileType) {
         switch (tileType) {
             case QUEEN_BEE -> {
-                return QUEEN_TILE_VALUE;
+                return queenTileVal.getValue();
             }
             case ANT -> {
-                return ANT_TILE_VALUE;
+                return antTileVal.getValue();
             }
             case BEETLE -> {
-                return BEETLE_TILE_VALUE;
+                return beetleTileVal.getValue();
             }
             case GRASSHOPPER -> {
-                return GRASSHOPPER_TILE_VALUE;
+                return grasshopperTileVal.getValue();
             }
             case SPIDER -> {
-                return SPIDER_TILE_VALUE;
+                return spiderTileVal.getValue();
             }
             default -> throw new UnsupportedOperationException("Unknown tile type: " + tileType);
         }
     }
 
+    @Override
+    public String getHeuristicID() {
+        return heuristicID.getValue();
+    }
+
+    private static Option<Integer> intOption(String name, String description, int value) {
+        return Option.<Integer>builder()
+                .name(name)
+                .description(description)
+                .type(OptionType.SPINNER)
+                .valueType(Integer.class)
+                .value(value)
+                .setMinValue(Integer.MIN_VALUE / 2)
+                .setMaxValue(Integer.MAX_VALUE / 2)
+                .build();
+    }
+
+    @Override
+    public List<Option<?>> getOptions() {
+        return List.of(
+                heuristicID,
+                winScore,
+                loseScore,
+                ownQueenSurroundScore,
+                ownQueenStuckScore,
+                oppQueenSurroundScore,
+                oppQueenStuckScore,
+                queenTileVal,
+                antTileVal,
+                beetleTileVal,
+                grasshopperTileVal,
+                spiderTileVal
+        );
+    }
+
+    @Override
+    public void setOptions(List<Option<?>> options) {
+        for (Option<?> option : options) {
+            switch (option.getName()) {
+                case "Heuristic ID" -> heuristicID.setValue((String) option.getValue());
+                case "Win Score" -> winScore.setValue((Integer) option.getValue());
+                case "Lose Score" -> loseScore.setValue((Integer) option.getValue());
+                case "Own Queen Surround Score" -> ownQueenSurroundScore.setValue((Integer) option.getValue());
+                case "Own Queen Stuck Score" -> ownQueenStuckScore.setValue((Integer) option.getValue());
+                case "Opponent Queen Surround Score" -> oppQueenSurroundScore.setValue((Integer) option.getValue());
+                case "Opponent Queen Stuck Score" -> oppQueenStuckScore.setValue((Integer) option.getValue());
+                case "Queen Tile Value" -> queenTileVal.setValue((Integer) option.getValue());
+                case "Ant Tile Value" -> antTileVal.setValue((Integer) option.getValue());
+                case "Beetle Tile Value" -> beetleTileVal.setValue((Integer) option.getValue());
+                case "Grasshopper Tile Value" -> grasshopperTileVal.setValue((Integer) option.getValue());
+                case "Spider Tile Value" -> spiderTileVal.setValue((Integer) option.getValue());
+            }
+        }
+    }
+
+    @Override
+    public Map<String, Object> toLogMap() {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Option<?> option : getOptions()) {
+            map.put(option.getName().toLowerCase(), option.getValue());
+        }
+        return map;
+    }
 }

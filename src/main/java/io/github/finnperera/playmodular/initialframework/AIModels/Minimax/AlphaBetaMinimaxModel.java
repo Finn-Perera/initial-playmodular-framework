@@ -15,20 +15,33 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOptions, LoggableComponent {
     private static final String OPT_MAX_DEPTH = "Maximum depth";
     private static final String OPT_THREAD_COUNT = "Number of threads";
+    private static final String OPT_HEURISTIC = "Heuristic";
 
     private static final String DESC_MAX_DEPTH = "The maximum depth the model will go to"; // Might be +1
     private static final String DESC_THREAD_COUNT = "Number threads used in parallelisation," +
             " lower the value if bottle-necking is occurring, increase if the calculations take too long.";
+    private static final String DESC_HEURISTIC = "The heuristic that the model will use to evaluate a board state";
 
-    private final Heuristic<P, T> heuristic;
     private final AtomicLong numNodesExplored;
-    private int threadCount = Runtime.getRuntime().availableProcessors() - 1;
+    private int threadCount = Runtime.getRuntime().availableProcessors() - 3;
     private int maxDepth = 2;
     private final Player maxPlayer;
     private ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    private Option<Object> heuristicOption;
+    private Heuristic<P, T> heuristic;
 
     public AlphaBetaMinimaxModel(Player maxPlayer, Heuristic<P, T> heuristic) {
         this.maxPlayer = maxPlayer;
+        this.heuristicOption = Option.builder()
+                .name(OPT_HEURISTIC)
+                .description(DESC_HEURISTIC)
+                .value(heuristic)
+                .type(OptionType.DROPDOWN)
+                .valueType(Object.class)
+                .setMinValue(null)
+                .setMaxValue(null)
+                .setChoices(List.of(new ChoiceItem<>(heuristic.getHeuristicID(), heuristic)))
+                .build();
         this.heuristic = heuristic;
         numNodesExplored = new AtomicLong(0);
     }
@@ -71,7 +84,6 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
 
     private int minimax(Game<P, T> gameState, int alpha, int beta, int depth, boolean maxPlayer) {
         incrementExploredNodes();
-
         if (depth <= 0 || gameState.isTerminalState()) {
             return heuristic.getEvaluation(gameState, this.maxPlayer);
         }
@@ -118,19 +130,16 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
         numNodesExplored.incrementAndGet();
     }
 
-    // might be useless? just for logging?
-    public long getNumExploredNodes() {
-        return numNodesExplored.get();
-    }
-
     @Override
     public List<Option<?>> getOptions() {
         return List.of(
                 new Option<>(OPT_MAX_DEPTH, DESC_MAX_DEPTH, OptionType.SPINNER, Integer.class, maxDepth, 1, 10),
-                new Option<>(OPT_THREAD_COUNT, DESC_THREAD_COUNT, OptionType.SPINNER, Integer.class, threadCount, 1, Runtime.getRuntime().availableProcessors())
+                new Option<>(OPT_THREAD_COUNT, DESC_THREAD_COUNT, OptionType.SPINNER, Integer.class, threadCount, 1, Runtime.getRuntime().availableProcessors()),
+                heuristicOption
         );
     }
 
+    @SuppressWarnings("unchecked") // not sure that I like this but can't find another way right now
     @Override
     public void setOptions(List<Option<?>> options) {
         for (Option<?> option : options) {
@@ -141,6 +150,14 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
                 case OPT_THREAD_COUNT:
                     threadCount = (Integer) option.getValue();
                     rebuildExecutor();
+                    break;
+                case OPT_HEURISTIC:
+                    if ((option.getValue() instanceof Heuristic<?, ?> h)) {
+                        heuristic = (Heuristic<P, T>) h;
+                        heuristicOption = (Option<Object>) option;
+                    } else {
+                        throw new IllegalArgumentException("Invalid Heuristic");
+                    }
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown option: " + option.getName());
