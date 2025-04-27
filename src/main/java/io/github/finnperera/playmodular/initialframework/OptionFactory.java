@@ -1,10 +1,11 @@
 package io.github.finnperera.playmodular.initialframework;
 
-import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+
+import java.util.List;
 
 public class OptionFactory {
 
@@ -72,14 +73,24 @@ public class OptionFactory {
             throw new IllegalArgumentException("Dropdown requires choices");
         }
 
-        ComboBox<T> comboBox = new ComboBox<>(FXCollections.observableList(option.getChoices()));
-        comboBox.setValue(option.getValue());
+        List<ChoiceItem<T>> choices = option.getChoices();
+        ChoiceBox<ChoiceItem<T>> choiceBox = new ChoiceBox<>();
+        choiceBox.getItems().setAll(choices);
 
-        comboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            option.setValue(newVal);
+        for (ChoiceItem<T> item : choices) {
+            if (item.getItem().equals(option.getValue())) {
+                choiceBox.setValue(item);
+                break;
+            }
+        }
+
+        choiceBox.valueProperty().addListener((obs, oldItem, newItem) -> {
+            if (newItem != null) {
+                option.setValue(newItem.getItem());
+            }
         });
 
-        return comboBox;
+        return choiceBox;
     }
 
     private static <T> Control createCheckbox(Option<T> option) {
