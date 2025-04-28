@@ -169,7 +169,7 @@ public class Main extends Application implements GameResultListener {
 
             prepareGameSetUp(isVisualDisabled, shouldLog);
 
-            if (isMultiGame && isVisualDisabled) {
+            if (isMultiGame && isVisualDisabled && threadCount > 1) {
                 runGamesSimultaneously(numGames, threadCount, shouldLog);
             } else {
                 runGamesSequentially(numGames, isVisualDisabled, shouldLog);
