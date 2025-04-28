@@ -26,7 +26,7 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
             "Factor for exploration (high) or exploitation (low) on nodes, typically at sqrt(2)";
     private static final String DESC_ITERATIONS = "Number of game simulations run for each move";
     // Could make these final and have a default value in the options but not set until set options called?
-    public double explorationConstant = 1.27; // Constant factor for UCB (sqrt(2) is a common val)
+    public double explorationConstant = 1.41; // Constant factor for UCB (sqrt(2) is a common val)
     public int maxMoves = 150;
     private MCTSNode<P, T> rootNode;
     private int iterations = 500;
