@@ -106,8 +106,10 @@ public class Main extends Application implements GameResultListener {
 
             HivePlayer updatedPlayer = gameConfig.configureHivePlayer(colour, playerChoiceBox.getValue());
             gameConfig.setPlayer(colour, updatedPlayer, null); // set with base options
+            optionContainer.getChildren().addAll(createAIOptions(gameConfig.getPlayerOptions(colour)));
 
             if (updatedPlayer instanceof HiveAI ai && ai.getAIModel() instanceof ConfigurableOptions config) {
+                optionContainer.getChildren().clear();
                 gameConfig.setPlayer(colour, updatedPlayer, config.getOptions()); // expand if ai options available
                 List<Option<?>> playerUpdatedOptions = gameConfig.getPlayerOptions(colour);
                 optionContainer.getChildren().addAll(createAIOptions(playerUpdatedOptions));
@@ -129,12 +131,6 @@ public class Main extends Application implements GameResultListener {
 
                     Node newDropDown = OptionFactory.createOptionControl(heuristicOption.get());
                     newDropDown.setId("Heuristic");
-                    if (newDropDown instanceof ChoiceBox<?> dropdown) {
-                        Object firstItem = dropdown.getItems().getFirst();
-                        @SuppressWarnings("unchecked") // I don't like this but can't find alternative option
-                        ChoiceBox<Object> objDropdown = (ChoiceBox<Object>) dropdown;
-                        objDropdown.setValue(firstItem);
-                    }
                     pane.getChildren().set(index, newDropDown);
                 }
             }
