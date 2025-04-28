@@ -13,10 +13,10 @@ public class GameLog {
     private Duration totalTime;
     private int totalTurns;
     private Map<Player, GameResult> playerResults;
-    private ArrayList<? extends Move<?, ?>> moveList;
+    private ArrayList<MoveData> moveList;
 
     public GameLog(Instant startTime, Instant endTime, Map<Player, GameResult> playerResults, int totalTurns,
-                   ArrayList<? extends Move<?, ?>> moveList) {
+                   ArrayList<MoveData> moveList) {
         gameID = UUID.randomUUID().toString();
         this.startTime = startTime;
         this.endTime = endTime;
@@ -52,13 +52,7 @@ public class GameLog {
 
     public String[] toStringArray() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        long seconds = totalTime.getSeconds();
-        long hours = seconds / 3600;
-        long minutes = (seconds % 3600) / 60;
-        seconds = seconds % 60;
-
-        String duration = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        String duration = formatDuration(totalTime);
 
         List<String> list = new ArrayList<>();
         list.add(gameID);
@@ -72,6 +66,15 @@ public class GameLog {
         }
 
         return list.toArray(new String[0]);
+    }
+
+    private String formatDuration(Duration duration) {
+        long seconds = duration.getSeconds();
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        seconds = seconds % 60;
+
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     public Map<String, Object> toMap() {
@@ -91,8 +94,11 @@ public class GameLog {
         }
         map.put("players", playerMap);
         ArrayList<Map<String, Object>> moveMapList = new ArrayList<>();
-        for (Move<?, ?> move : moveList) {
-            moveMapList.add(move.toLogMap());
+        for (MoveData move : moveList) {
+            Map<String, Object> moveMap = new LinkedHashMap<>();
+            moveMap.put("turn length", formatDuration(move.timeTaken()));
+            moveMap.put("move", move.move().toLogMap());
+            moveMapList.add(moveMap);
         }
         map.put("moves", moveMapList);
         return map;

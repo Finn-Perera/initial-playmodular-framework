@@ -443,6 +443,6 @@ public class HiveGameDesigner extends Pane {
     }
 
     public HiveGame getGeneratedGame() {
-        return new HiveGame(ruleEngine, player1, player2, hiveBoardState, turnCount.getValue(), new ArrayList<>());
+        return new HiveGame(ruleEngine, player1, player2, hiveBoardState, turnCount.getValue());
     }
 }

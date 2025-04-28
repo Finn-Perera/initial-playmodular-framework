@@ -10,7 +10,7 @@ import java.util.List;
 
 public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
 
-    private final ArrayList<HiveMove> moveList;
+    //private final ArrayList<HiveMove> moveList;
     private final HiveRuleEngine ruleEngine;
     private final HiveBoardState boardState;
     private final HivePlayer player1;
@@ -19,7 +19,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
     private int turn;
 
     public HiveGame(HiveRuleEngine ruleEngine, HivePlayer player1, HivePlayer player2, HiveBoardState boardState) {
-        moveList = new ArrayList<>();
+        //moveList = new ArrayList<>();
         this.ruleEngine = ruleEngine;
         this.player1 = player1;
         this.player2 = player2;
@@ -28,8 +28,8 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
     }
 
     public HiveGame(HiveRuleEngine ruleEngine, HivePlayer player1, HivePlayer player2, HiveBoardState boardState,
-                    int turn, ArrayList<HiveMove> moveList) {
-        this.moveList = new ArrayList<>(moveList);
+                    int turn) {
+        //this.moveList = new ArrayList<>(moveList);
         this.ruleEngine = ruleEngine;
         this.player1 = player1;
         this.player2 = player2;
@@ -97,8 +97,8 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
         }
 
         HiveGame newGame;
-        ArrayList<HiveMove> newMoveList = new ArrayList<>(moveList);
-        newMoveList.add(move);
+        //ArrayList<HiveMove> newMoveList = new ArrayList<>(moveList);
+        //newMoveList.add(move);
 
         if (move.isPlacementMove()) {
             HiveColour currentPlayerCol = getCurrentPlayer().getColour();
@@ -112,16 +112,16 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
             HiveBoardState newBoardState = new HiveBoardState(boardState);
             newBoardState.placePiece(move.getNextPosition(), move.getPieceToMove());
             if (player1.getColour() == currentPlayerCol) {
-                newGame = new HiveGame(ruleEngine, (HivePlayer) player, player2, newBoardState, turn + 1, newMoveList);
+                newGame = new HiveGame(ruleEngine, (HivePlayer) player, player2, newBoardState, turn + 1);
             } else {
-                newGame = new HiveGame(ruleEngine, player1, (HivePlayer) player, newBoardState, turn + 1, newMoveList);
+                newGame = new HiveGame(ruleEngine, player1, (HivePlayer) player, newBoardState, turn + 1);
             }
         } else {
             HiveBoardState newBoardState = new HiveBoardState(boardState);
             HiveTile newTile = new HiveTile(move.getPieceToMove().getTileType(), move.getNextPosition(), move.getPieceToMove().getColour());
             newBoardState.removePieceAt(move.getPieceToMove().getHex());
             newBoardState.placePiece(move.getNextPosition(), newTile);
-            newGame = new HiveGame(ruleEngine, player1, player2, newBoardState, turn + 1, newMoveList);
+            newGame = new HiveGame(ruleEngine, player1, player2, newBoardState, turn + 1);
         }
         return newGame;
     }
@@ -246,7 +246,7 @@ public class HiveGame implements Game<Hex, HiveTile>, ConfigurableOptions {
         turn += 1;
     }
 
-    public ArrayList<HiveMove> getMoveList() { return moveList; }
+    //public ArrayList<HiveMove> getMoveList() { return moveList; }
 
     @Override
     public List<Player> getPlayers() {

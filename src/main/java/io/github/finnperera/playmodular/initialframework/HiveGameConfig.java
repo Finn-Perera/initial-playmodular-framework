@@ -90,7 +90,7 @@ public class HiveGameConfig implements LoggableGameConfig {
         configurePlayerOptions(gamePlayer1, player1Options);
         configurePlayerOptions(gamePlayer2, player2Options);
         return new HiveGame(new HiveRuleEngine(), gamePlayer1, gamePlayer2,
-                new HiveBoardState(game.getBoardState()), game.getTurn(), new ArrayList<>());
+                new HiveBoardState(game.getBoardState()), game.getTurn());
     }
 
     public HivePlayer configureHivePlayer(HiveColour colour, String playerType) {

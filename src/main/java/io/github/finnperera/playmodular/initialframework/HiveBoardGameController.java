@@ -24,11 +24,14 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
     private HiveTile selectedTile;
     private List<GameResultListener> gameResultListeners = new ArrayList<>();
     private Instant startTime;
+    private Instant startTurnTime;
+    private final ArrayList<MoveData> moveList;
     private Runnable onGameEnd; // could incorporate this into a general controller
 
     public HiveBoardGameController(HiveGamePane gamePane, HiveGame game) {
         this.gamePane = gamePane;
         this.game = game;
+        moveList = new ArrayList<>();
         gamePane.setDrawButtonOnClick(this::finishGame);
 
         setListening();
@@ -36,20 +39,28 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
 
     public void beginGame() { // might need to add more initial calls here later?
         startTime = Instant.now();
+        startTurnTime = Instant.now();
         checkGameState();
     }
 
     private void handleMove(HiveMove move) {
+        Instant endTurnTime = Instant.now();
         game = game.makeMove(move);
-
 
         gamePane.setGame(game);
         gamePane.update();
         setListening();
 
+        addToMoveList(move, startTurnTime, endTurnTime);
+
+        startTurnTime = Instant.now();
         checkGameState();
         selectedTile = null;
         System.out.println("Turn: " + game.getTurn());
+    }
+
+    private void addToMoveList(HiveMove move, Instant startTime, Instant endTime) {
+        moveList.add(new MoveData(java.time.Duration.between(startTime, endTime), move));
     }
 
     private void checkGameState() {
@@ -203,7 +214,7 @@ public class HiveBoardGameController implements TileClickListener, HandClickList
             gameResultMap.put(player, game.getGameResult(player));
         }
 
-        return new GameLog(startTime, endTime, gameResultMap, game.getTurn(), game.getMoveList());
+        return new GameLog(startTime, endTime, gameResultMap, game.getTurn(), moveList);
     }
 
     private void setListening() {
