@@ -92,7 +92,7 @@ public class Main extends Application implements GameResultListener {
 
     private void createPlayerChoiceBox(Pane root, HiveColour colour) {
         ChoiceBox<String> playerChoiceBox = new ChoiceBox<>();
-        playerChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax", "Alpha-Beta");
+        playerChoiceBox.getItems().addAll("Human", "Monte Carlo", "Minimax", "Alpha-Beta", "Random Moves");
         playerChoiceBox.setValue("Human");
 
         VBox optionContainer = new VBox();

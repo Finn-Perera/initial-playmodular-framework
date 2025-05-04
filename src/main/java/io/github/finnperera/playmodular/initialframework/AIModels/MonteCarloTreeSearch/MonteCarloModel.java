@@ -42,16 +42,18 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
         try (ExecutorService executor = Executors.newFixedThreadPool(numThreads)) {
             List<Future<?>> futures = new ArrayList<>(numThreads);
 
-            for (int i = 0; i < iterations; i++) {
+            for (int i = 0; i < numThreads; i++) {
                 futures.add(executor.submit(() -> {
-                    try {
-                        MCTSNode<P, T> selectedNode = select();
-                        MCTSNode<P, T> expandedNode = expand(selectedNode);
-                        MCTSNode<P, T> selectedExpansion = getBestChild(expandedNode);
-                        Game<P, T> finalState = simulate(selectedExpansion);
-                        backpropagation(finalState, selectedExpansion);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    for (int j = 0; j < iterations / numThreads; j++) {
+                        try {
+                            MCTSNode<P, T> selectedNode = select();
+                            MCTSNode<P, T> expandedNode = expand(selectedNode);
+                            MCTSNode<P, T> selectedExpansion = getBestChild(expandedNode);
+                            Game<P, T> finalState = simulate(selectedExpansion);
+                            backpropagation(finalState, selectedExpansion);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }));
             }
@@ -82,7 +84,7 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
         return current;
     }
 
-    private synchronized MCTSNode<P, T> getBestChild(MCTSNode<P, T> node) {
+    private MCTSNode<P, T> getBestChild(MCTSNode<P, T> node) {
         MCTSNode<P, T> bestChild = null;
         double bestScore = Double.NEGATIVE_INFINITY;
 
@@ -95,7 +97,7 @@ public class MonteCarloModel<P, T> implements AI<P, T>, ConfigurableOptions {
         }
 
         if (bestChild == null) {
-            System.out.println("No best child");
+            throw new RuntimeException("It was here");
         }
 
         return bestChild;

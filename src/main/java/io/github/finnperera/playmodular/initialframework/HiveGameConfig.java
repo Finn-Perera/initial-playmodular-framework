@@ -4,6 +4,7 @@ package io.github.finnperera.playmodular.initialframework;
 import io.github.finnperera.playmodular.initialframework.AIModels.Minimax.AlphaBetaMinimaxModel;
 import io.github.finnperera.playmodular.initialframework.AIModels.Minimax.MinimaxModel;
 import io.github.finnperera.playmodular.initialframework.AIModels.MonteCarloTreeSearch.MonteCarloModel;
+import io.github.finnperera.playmodular.initialframework.AIModels.RandomModel;
 import io.github.finnperera.playmodular.initialframework.HiveHeuristics.BasicHeuristic;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HiveAI;
 import io.github.finnperera.playmodular.initialframework.HivePlayers.HivePlayer;
@@ -105,6 +106,9 @@ public class HiveGameConfig implements LoggableGameConfig {
             case "Alpha-Beta" -> {
                 updatedPlayer = new HiveAI(colour, null);
                 configureAIModel((HiveAI) updatedPlayer, new AlphaBetaMinimaxModel<>(updatedPlayer, new BasicHeuristic()));
+            }
+            case "Random Moves" -> {
+                updatedPlayer = new HiveAI(colour, new RandomModel<>());
             }
             case "Human" -> updatedPlayer = new HivePlayer(colour);
         }

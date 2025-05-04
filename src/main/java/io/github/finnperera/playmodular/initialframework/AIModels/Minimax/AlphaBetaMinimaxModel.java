@@ -24,7 +24,7 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
 
     private final AtomicLong numNodesExplored;
     private int threadCount = Runtime.getRuntime().availableProcessors() - 3;
-    private int maxDepth = 2;
+    private int maxDepth = 3;
     private final Player maxPlayer;
     private ExecutorService executor = Executors.newFixedThreadPool(threadCount);
     private Option<Object> heuristicOption;
@@ -57,11 +57,10 @@ public class AlphaBetaMinimaxModel<P, T> implements AI<P, T>, ConfigurableOption
         List<Future<EvaluatedMove<P, T>>> futures = new ArrayList<>();
 
         for (Move<P, T> move : moves) {
-            incrementExploredNodes();
             Game<P, T> newState = game.makeMove(move);
             Future<EvaluatedMove<P, T>> future = executor.submit(() ->
                     new EvaluatedMove<>
-                            (move, minimax(newState, Integer.MIN_VALUE, Integer.MAX_VALUE, maxDepth, false)));
+                            (move, minimax(newState, Integer.MIN_VALUE, Integer.MAX_VALUE, maxDepth - 1, false)));
             futures.add(future);
         }
 
